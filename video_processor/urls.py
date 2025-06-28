@@ -6,6 +6,9 @@ urlpatterns = [
     path('', views.search_interface_view, name='search_interface'),
     path('library/', views.VideoLibraryView.as_view(), name='library'),
     
+    # Phase 2: Enhanced AI interface
+    path('enhanced-search/', views.enhanced_search_interface, name='enhanced_search'),
+    
     # Authentication
     path('accounts/', include('django.contrib.auth.urls')),
     path('register/', views.register_view, name='register'),
@@ -20,6 +23,12 @@ urlpatterns = [
     # Search functionality
     path('api/search/', views.api_clean_search, name='api_search'),
     path('search/', views.search_videos, name='search_videos'),
+    
+    # Phase 2: Enhanced AI APIs
+    path('api/enhanced-search/', views.api_enhanced_search, name='api_enhanced_search'),
+    path('api/rag-qa/', views.api_rag_question_answer, name='api_rag_qa'),
+    path('api/enhanced-status/', views.api_enhanced_transcription_status, name='api_enhanced_status'),
+    path('api/rebuild-enhanced-index/', views.api_rebuild_enhanced_index, name='api_rebuild_enhanced_index'),
     
     # Video serving and info
     path('video/<str:job_id>/', views.serve_video_file, name='serve_video'),
@@ -40,7 +49,7 @@ urlpatterns = [
     path('api/detailed-stats/', views.api_detailed_stats, name='api_detailed_stats'),
     path('api/pending-jobs/', views.api_pending_jobs, name='api_pending_jobs'),
     
-    # AI enhancement APIs
+    # AI enhancement APIs (existing)
     path('api/ai-enhanced-search/', views.api_ai_enhanced_search, name='api_ai_enhanced_search'),
     path('api/ai-question-answer/', views.api_ai_question_answer, name='api_ai_question_answer'),
     path('api/ai-status/', views.api_ai_status, name='api_ai_status'),

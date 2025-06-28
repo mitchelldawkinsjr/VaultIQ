@@ -50,6 +50,26 @@ except ImportError:
     SemanticSearchEngine = None
     search_engine = None
 
+# Phase 2: Import enhanced AI components
+try:
+    from enhanced_semantic_search import get_enhanced_search_engine
+    from enhanced_whisper_pipeline import get_enhanced_whisper
+    from rag_qa_system import get_rag_qa_system
+    
+    enhanced_search = get_enhanced_search_engine()
+    enhanced_whisper = get_enhanced_whisper()
+    rag_qa = get_rag_qa_system()
+    
+    PHASE2_AI_AVAILABLE = True
+    logger.info("Phase 2 enhanced AI components loaded successfully")
+    
+except ImportError as e:
+    logger.warning(f"Phase 2 AI components not available: {e}")
+    enhanced_search = None
+    enhanced_whisper = None
+    rag_qa = None
+    PHASE2_AI_AVAILABLE = False
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -1718,12 +1738,19 @@ def health_check(request):
         VideoJob.objects.count()
         
         # Check if core services are available
+        search_engine_status = 'unavailable'
+        if search_engine is not None and hasattr(search_engine, 'is_available'):
+            search_engine_status = 'available' if search_engine.is_available else 'unavailable'
+        
         health_status = {
             'status': 'healthy',
             'timestamp': datetime.now().isoformat(),
             'database': 'connected',
-            'search_engine': 'available' if search_engine.is_available else 'unavailable',
+            'search_engine': search_engine_status,
             'whisper': 'available',  # If we got here, imports worked
+            'phase2_ai': 'available' if PHASE2_AI_AVAILABLE else 'unavailable',
+            'enhanced_search': 'available' if enhanced_search is not None else 'unavailable',
+            'rag_qa': 'available' if rag_qa is not None else 'unavailable'
         }
         
         return JsonResponse(health_status)
@@ -1735,3 +1762,283 @@ def health_check(request):
             'error': str(e)
         }
         return JsonResponse(health_status, status=503)
+
+
+@login_required
+@csrf_exempt
+def api_enhanced_search(request):
+    """Enhanced semantic search with better embeddings and filtering."""
+    if not PHASE2_AI_AVAILABLE or enhanced_search is None:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Enhanced search not available'
+        })
+    
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'})
+    
+    try:
+        data = json.loads(request.body)
+        query = data.get('query', '').strip()
+        
+        if not query:
+            return JsonResponse({'status': 'error', 'message': 'Query required'})
+        
+        # Enhanced search parameters
+        k = min(int(data.get('k', 10)), 50)
+        min_similarity = float(data.get('min_similarity', 0.3))
+        filter_topics = data.get('filter_topics', [])
+        
+        logger.info(f"Enhanced search query: '{query}' by user {request.user.username}")
+        
+        # Check if enhanced search engine is initialized
+        if not enhanced_search.is_initialized:
+            # Try to load from cache or build new index
+            if not enhanced_search._load_index():
+                # Build new enhanced index
+                user_videos = VideoJob.objects.filter(
+                    user=request.user,
+                    status=JobStatus.COMPLETED
+                )
+                
+                segments = []
+                for video in user_videos:
+                    if video.transcription and 'text_segments' in video.transcription:
+                        for segment in video.transcription['text_segments']:
+                            segments.append({
+                                'text': segment.get('text', ''),
+                                'video_id': str(video.job_id),
+                                'video_title': video.video_name,
+                                'start_time': segment.get('start', 0),
+                                'end_time': segment.get('end', 0)
+                            })
+                
+                if segments:
+                    enhanced_search.build_enhanced_index(segments)
+        
+        # Perform enhanced search
+        results = enhanced_search.search(
+            query=query,
+            k=k,
+            min_similarity=min_similarity,
+            filter_topics=filter_topics if filter_topics else None
+        )
+        
+        # Convert results to API format
+        search_results = []
+        for result in results:
+            search_results.append({
+                'video_id': result.video_id,
+                'video_title': result.video_title,
+                'text': result.segment_text,
+                'start_time': result.start_time,
+                'end_time': result.end_time,
+                'confidence': result.confidence_score,
+                'semantic_similarity': result.semantic_similarity,
+                'context_window': result.context_window,
+                'topic_tags': result.topic_tags,
+                'timestamp_formatted': f"{int(result.start_time // 60):02d}:{int(result.start_time % 60):02d}"
+            })
+        
+        return JsonResponse({
+            'status': 'success',
+            'results': search_results,
+            'total_results': len(results),
+            'query': query,
+            'search_type': 'enhanced_semantic',
+            'processing_time': enhanced_search.stats.get('average_search_time', 0),
+            'model_info': {
+                'model_name': enhanced_search.model_name,
+                'total_segments': enhanced_search.stats.get('index_size', 0)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Enhanced search failed: {e}")
+        return JsonResponse({
+            'status': 'error', 
+            'message': f'Enhanced search failed: {str(e)}'
+        }, status=500)
+
+
+@login_required
+@csrf_exempt
+def api_rag_question_answer(request):
+    """RAG-based question answering using enhanced search and QA models."""
+    if not PHASE2_AI_AVAILABLE or rag_qa is None:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'RAG Q&A system not available'
+        })
+    
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'})
+    
+    try:
+        data = json.loads(request.body)
+        question = data.get('question', '').strip()
+        
+        if not question:
+            return JsonResponse({'status': 'error', 'message': 'Question required'})
+        
+        # QA parameters
+        method = data.get('method', 'auto')  # auto, extractive, generative, hybrid
+        include_sources = data.get('include_sources', True)
+        filter_topics = data.get('filter_topics', [])
+        
+        logger.info(f"RAG Q&A question: '{question}' by user {request.user.username}")
+        
+        # Ensure enhanced search is initialized for the user
+        if not enhanced_search.is_initialized:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Enhanced search index not available. Please build index first.'
+            })
+        
+        # Answer question using RAG
+        qa_result = rag_qa.answer_question(
+            question=question,
+            method=method,
+            include_sources=include_sources,
+            filter_topics=filter_topics if filter_topics else None
+        )
+        
+        # Format sources for API response
+        sources = []
+        if qa_result.sources:
+            for source in qa_result.sources:
+                sources.append({
+                    'video_id': source.video_id,
+                    'video_title': source.video_title,
+                    'text': source.segment_text,
+                    'start_time': source.start_time,
+                    'end_time': source.end_time,
+                    'confidence': source.confidence_score,
+                    'topic_tags': source.topic_tags,
+                    'timestamp_formatted': f"{int(source.start_time // 60):02d}:{int(source.start_time % 60):02d}"
+                })
+        
+        return JsonResponse({
+            'status': 'success',
+            'question': qa_result.question,
+            'answer': qa_result.answer,
+            'confidence': qa_result.confidence,
+            'method': qa_result.method,
+            'sources': sources,
+            'processing_time': qa_result.processing_time,
+            'metadata': qa_result.metadata
+        })
+        
+    except Exception as e:
+        logger.error(f"RAG Q&A failed: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Question answering failed: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def api_enhanced_transcription_status(request):
+    """Check status of enhanced AI transcription capabilities."""
+    try:
+        status = {
+            'phase2_available': PHASE2_AI_AVAILABLE,
+            'enhanced_search': {
+                'available': enhanced_search is not None,
+                'initialized': enhanced_search.is_initialized if enhanced_search else False,
+                'stats': enhanced_search.get_stats() if enhanced_search else {}
+            },
+            'enhanced_whisper': {
+                'available': enhanced_whisper is not None,
+                'stats': enhanced_whisper.get_stats() if enhanced_whisper else {}
+            },
+            'rag_qa': {
+                'available': rag_qa is not None,
+                'stats': rag_qa.get_stats() if rag_qa else {}
+            }
+        }
+        
+        return JsonResponse({
+            'status': 'success',
+            'ai_status': status
+        })
+        
+    except Exception as e:
+        logger.error(f"AI status check failed: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+@login_required
+@csrf_exempt
+def api_rebuild_enhanced_index(request):
+    """Rebuild enhanced search index with improved embeddings."""
+    if not PHASE2_AI_AVAILABLE or enhanced_search is None:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Enhanced search not available'
+        })
+    
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'})
+    
+    try:
+        logger.info(f"Rebuilding enhanced search index for user {request.user.username}")
+        
+        # Get user's completed videos
+        user_videos = VideoJob.objects.filter(
+            user=request.user,
+            status=JobStatus.COMPLETED
+        )
+        
+        segments = []
+        video_count = 0
+        
+        for video in user_videos:
+            if video.transcription and 'text_segments' in video.transcription:
+                video_count += 1
+                for segment in video.transcription['text_segments']:
+                    segments.append({
+                        'text': segment.get('text', ''),
+                        'video_id': str(video.job_id),
+                        'video_title': video.video_name,
+                        'start_time': segment.get('start', 0),
+                        'end_time': segment.get('end', 0)
+                    })
+        
+        if not segments:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No transcribed videos found to index'
+            })
+        
+        # Build enhanced index
+        enhanced_search.build_enhanced_index(segments)
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Enhanced index rebuilt successfully',
+            'videos_processed': video_count,
+            'segments_indexed': len(segments),
+            'model_name': enhanced_search.model_name,
+            'build_time': enhanced_search.metadata.get('build_time', 0)
+        })
+        
+    except Exception as e:
+        logger.error(f"Enhanced index rebuild failed: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Index rebuild failed: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def enhanced_search_interface(request):
+    """Render enhanced search interface for Phase 2 AI capabilities."""
+    return render(request, 'video_processor/enhanced_search.html', {
+        'phase2_available': PHASE2_AI_AVAILABLE,
+        'enhanced_search_ready': enhanced_search.is_initialized if enhanced_search else False,
+        'user': request.user
+    })

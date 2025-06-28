@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaultIQ - Enhanced AI Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .ai-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .ai-status.available {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .ai-status.unavailable {
+            background: rgba(255, 152, 0, 0.2);
+            color: #FF9800;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+        }
+
+        .search-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .search-input-container {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 20px 60px 20px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-50%) translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .option-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .option-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        select, input[type="range"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .results-container {
+            margin-top: 30px;
+        }
+
+        .results-header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .results-content {
+            background: white;
+            border-radius: 0 0 15px 15px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .result-item:hover {
+            background: #f8f9fa;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .video-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .confidence-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .confidence-high { background: #e8f5e8; color: #2e7d2e; }
+        .confidence-medium { background: #fff3e0; color: #f57c00; }
+        .confidence-low { background: #ffebee; color: #c62828; }
+
+        .result-text {
+            color: #666;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .result-metadata {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        .timestamp-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .timestamp-link:hover {
+            text-decoration: underline;
+        }
+
+        .topic-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .topic-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .qa-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .qa-toggle {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .qa-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .qa-answer {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #4caf50;
+            margin-top: 15px;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 10px 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.6);
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .search-card { padding: 20px; }
+            .header h1 { font-size: 2rem; }
+            .search-options { grid-template-columns: 1fr; }
+            .mode-buttons { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 VaultIQ Enhanced AI Search</h1>
+            <p class="subtitle">Advanced semantic search with AI-powered question answering</p>
+            <div class="ai-status {% if phase2_available %}available{% else %}unavailable{% endif %}">
+                {% if phase2_available %}
+                    ✅ Phase 2 AI: Enhanced capabilities active
+                {% else %}
+                    ⚠️ Phase 2 AI: Fallback mode (basic search only)
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="search-card">
+            <form class="search-form" id="searchForm">
+                <div class="search-input-container">
+                    <input type="text" id="searchQuery" class="search-input" 
+                           placeholder="Ask anything about your videos... (e.g., 'How do I improve my communication skills?')" 
+                           required>
+                    <button type="submit" class="search-btn">🔍 Search</button>
+                </div>
+
+                <div class="search-options">
+                    <div class="option-group">
+                        <label>Search Mode:</label>
+                        <div class="mode-buttons">
+                            <button type="button" class="mode-btn active" data-mode="enhanced">Enhanced</button>
+                            <button type="button" class="mode-btn" data-mode="semantic">Semantic</button>
+                            <button type="button" class="mode-btn" data-mode="hybrid">Hybrid</button>
+                        </div>
+                    </div>
+
+                    <div class="option-group">
+                        <label for="maxResults">Max Results:</label>
+                        <select id="maxResults">
+                            <option value="10">10 results</option>
+                            <option value="20">20 results</option>
+                            <option value="50">50 results</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <label for="minSimilarity">Similarity Threshold:</label>
+                        <input type="range" id="minSimilarity" min="0" max="1" step="0.1" value="0.3">
+                        <span id="similarityValue">0.3</span>
+                    </div>
+
+                    <div class="option-group">
+                        <label for="filterTopics">Filter by Topics:</label>
+                        <input type="text" id="filterTopics" placeholder="e.g., health, technology">
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="qa-section" id="qaSection" style="display: none;">
+            <button class="qa-toggle" id="qaToggle">🤖 Ask AI Question</button>
+            <div id="qaContent" style="display: none;">
+                <input type="text" id="qaQuestion" class="qa-input" 
+                       placeholder="Ask a specific question about your video content...">
+                <button onclick="askQuestion()" class="search-btn" style="position: static; transform: none;">Ask Question</button>
+                <div id="qaAnswer"></div>
+            </div>
+        </div>
+
+        <div id="resultsContainer" class="results-container" style="display: none;">
+            <div class="results-header">
+                <h3 id="resultsTitle">Search Results</h3>
+                <div id="resultsCount"></div>
+            </div>
+            <div class="results-content" id="resultsContent"></div>
+        </div>
+
+        <div class="nav-links">
+            <a href="{% url 'search_interface' %}">← Basic Search</a>
+            <a href="{% url 'library' %}">📚 Video Library</a>
+            <a href="/admin/">⚙️ Admin</a>
+        </div>
+    </div>
+
+    <script>
+        let currentSearchMode = 'enhanced';
+        let currentResults = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize similarity slider
+            const slider = document.getElementById('minSimilarity');
+            const value = document.getElementById('similarityValue');
+            slider.addEventListener('input', function() {
+                value.textContent = this.value;
+            });
+
+            // Mode button handlers
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentSearchMode = this.dataset.mode;
+                });
+            });
+
+            // QA toggle
+            document.getElementById('qaToggle').addEventListener('click', function() {
+                const content = document.getElementById('qaContent');
+                content.style.display = content.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Search form handler
+            document.getElementById('searchForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                performSearch();
+            });
+
+            // Show QA section if Phase 2 is available
+            {% if phase2_available %}
+            document.getElementById('qaSection').style.display = 'block';
+            {% endif %}
+        });
+
+        async function performSearch() {
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) return;
+
+            const maxResults = document.getElementById('maxResults').value;
+            const minSimilarity = document.getElementById('minSimilarity').value;
+            const filterTopics = document.getElementById('filterTopics').value.trim();
+
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            // Show loading
+            resultsContainer.style.display = 'block';
+            resultsContent.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Searching with enhanced AI capabilities...</p>
+                </div>
+            `;
+
+            try {
+                const endpoint = currentSearchMode === 'enhanced' ? 
+                    '/api/enhanced-search/' : '/api/search/';
+                
+                const payload = {
+                    query: query,
+                    k: parseInt(maxResults),
+                    min_similarity: parseFloat(minSimilarity)
+                };
+
+                if (filterTopics) {
+                    payload.filter_topics = filterTopics.split(',').map(t => t.trim());
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    displayResults(data, query);
+                } else {
+                    showError(data.message || 'Search failed');
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                showError('Network error occurred');
+            }
+        }
+
+        function displayResults(data, query) {
+            const resultsContent = document.getElementById('resultsContent');
+            const resultsTitle = document.getElementById('resultsTitle');
+            const resultsCount = document.getElementById('resultsCount');
+
+            resultsTitle.textContent = `Results for "${query}"`;
+            resultsCount.textContent = `${data.results.length} results`;
+
+            if (data.results.length === 0) {
+                resultsContent.innerHTML = `
+                    <div class="loading">
+                        <p>No results found. Try different keywords or adjust the similarity threshold.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            data.results.forEach(result => {
+                const confidence = result.confidence || result.semantic_similarity || 0;
+                const confidenceClass = confidence > 0.7 ? 'confidence-high' : 
+                                      confidence > 0.4 ? 'confidence-medium' : 'confidence-low';
+                
+                const topics = result.topic_tags || [];
+                const topicHtml = topics.map(tag => 
+                    `<span class="topic-tag">${tag}</span>`
+                ).join('');
+
+                html += `
+                    <div class="result-item">
+                        <div class="result-header">
+                            <div class="video-title">${result.video_title}</div>
+                            <div class="confidence-badge ${confidenceClass}">
+                                ${Math.round(confidence * 100)}% match
+                            </div>
+                        </div>
+                        <div class="result-text">${result.text}</div>
+                        <div class="result-metadata">
+                            <a href="/video/${result.video_id}/?t=${result.start_time}" 
+                               class="timestamp-link" target="_blank">
+                                ⏱️ ${result.timestamp_formatted || formatTime(result.start_time)}
+                            </a>
+                            <span>Duration: ${formatTime(result.end_time - result.start_time)}</span>
+                            ${result.semantic_similarity ? `<span>Similarity: ${Math.round(result.semantic_similarity * 100)}%</span>` : ''}
+                        </div>
+                        ${topicHtml ? `<div class="topic-tags">${topicHtml}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            resultsContent.innerHTML = html;
+            currentResults = data.results;
+        }
+
+        async function askQuestion() {
+            const question = document.getElementById('qaQuestion').value.trim();
+            if (!question) return;
+
+            const answerDiv = document.getElementById('qaAnswer');
+            answerDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>AI is thinking about your question...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/rag-qa/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        method: 'auto',
+                        include_sources: true
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    let sourcesHtml = '';
+                    if (data.sources && data.sources.length > 0) {
+                        sourcesHtml = '<h4>Sources:</h4>';
+                        data.sources.forEach(source => {
+                            sourcesHtml += `
+                                <div style="margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+                                    <strong>${source.video_title}</strong> - 
+                                    <a href="/video/${source.video_id}/?t=${source.start_time}" target="_blank">
+                                        ${formatTime(source.start_time)}
+                                    </a>
+                                    <br><em>${source.text.substring(0, 200)}...</em>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    answerDiv.innerHTML = `
+                        <div class="qa-answer">
+                            <h4>AI Answer:</h4>
+                            <p><strong>${data.answer}</strong></p>
+                            <div style="margin-top: 15px; font-size: 0.9rem; color: #666;">
+                                Confidence: ${Math.round(data.confidence * 100)}% | 
+                                Method: ${data.method} | 
+                                Processing time: ${data.processing_time}ms
+                            </div>
+                            ${sourcesHtml}
+                        </div>
+                    `;
+                } else {
+                    showError(data.message || 'Question answering failed', answerDiv);
+                }
+            } catch (error) {
+                console.error('QA error:', error);
+                showError('Network error occurred', answerDiv);
+            }
+        }
+
+        function showError(message, container = null) {
+            const errorHtml = `
+                <div class="error">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+            
+            if (container) {
+                container.innerHTML = errorHtml;
+            } else {
+                document.getElementById('resultsContent').innerHTML = errorHtml;
+                document.getElementById('resultsContainer').style.display = 'block';
+            }
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html> 

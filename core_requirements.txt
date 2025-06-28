@@ -27,12 +27,21 @@ Pillow==10.0.0
 openai-whisper==20231117
 yt-dlp==2023.7.6
 
-# AI & Search
+# AI & Search - Phase 2 Enhanced
 torch==2.0.1
 transformers==4.33.2
 sentence-transformers==2.2.2
 faiss-cpu==1.7.4
 numpy==1.24.3
+
+# Enhanced AI Models for Phase 2
+# Better embedding models
+BAAI/bge-large-en-v1.5  # Enhanced semantic search model
+all-mpnet-base-v2        # Alternative high-quality embedding model
+
+# QA Models
+deepset/roberta-base-squad2  # Extractive Q&A
+google/flan-t5-base         # Generative Q&A
 
 # Enhanced AI Features
 aiohttp==3.8.5
@@ -48,4 +57,9 @@ redis==4.6.0
 
 # Development & Testing
 pytest==7.4.0
-pytest-django==4.5.2 
+pytest-django==4.5.2
+
+# Additional ML dependencies for Phase 2
+scikit-learn==1.3.0
+datasets==2.14.0
+accelerate==0.21.0 
