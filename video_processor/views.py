@@ -21,6 +21,13 @@ from urllib.parse import urlparse, parse_qs
 import asyncio
 from datetime import datetime, timedelta
 from collections import defaultdict
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import UserCreationForm
+from django.views.decorators.http import require_http_methods
+from django.utils.decorators import method_decorator
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
 
 from .models import VideoJob, JobStatus, VideoSearchQuery
 from core_video_processor import CoreVideoProcessor
@@ -49,58 +56,64 @@ logger = logging.getLogger(__name__)
 # Initialize the video processor
 video_processor = CoreVideoProcessor()
 
+# User Authentication Views
+def register_view(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            username = form.cleaned_data.get('username')
+            messages.success(request, f'Account created for {username}! Please log in.')
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/register.html', {'form': form})
 
-class VideoLibraryView(ListView):
-    """Main view showing all videos in the library."""
+# Multi-tenant Video Library View
+@method_decorator(login_required, name='dispatch')
+class VideoLibraryView(LoginRequiredMixin, ListView):
     model = VideoJob
     template_name = 'video_processor/library.html'
     context_object_name = 'videos'
-    paginate_by = 20
+    login_url = reverse_lazy('login')
     
     def get_queryset(self):
-        return VideoJob.objects.filter(status=JobStatus.COMPLETED).order_by('-created_at')
+        # Filter videos by current user
+        return VideoJob.objects.filter(user=self.request.user)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Calculate statistics
-        total_videos = VideoJob.objects.filter(status=JobStatus.COMPLETED).count()
-        total_processing_time = sum(
-            job.processing_time or 0 
-            for job in VideoJob.objects.filter(status=JobStatus.COMPLETED)
-        )
-        total_words = sum(
-            job.word_count or 0 
-            for job in VideoJob.objects.filter(status=JobStatus.COMPLETED)
-        )
-        pending_jobs = VideoJob.objects.filter(status=JobStatus.PENDING).count()
-        
-        # Check and initialize search engine if needed
-        search_available = False
-        try:
-            stats = search_engine.get_stats()
-            if stats['is_available'] and not stats['is_initialized']:
-                logger.info("Initializing search engine for web interface...")
-                search_engine._load_index()
-                stats = search_engine.get_stats()
-            search_available = stats['is_initialized']
-        except Exception as e:
-            logger.warning(f"Could not initialize search engine: {e}")
-        
+        # Add user-specific statistics
+        user_videos = self.get_queryset()
         context.update({
-            'stats': {
-                'total_videos': total_videos,
-                'total_processing_time': total_processing_time,
-                'total_words': total_words,
-                'pending_jobs': pending_jobs,
-            },
-            'query': None,
-            'search_results': None,
-            'semantic_available': search_available,
+            'video_count': user_videos.count(),
+            'completed_count': user_videos.filter(status='completed').count(),
+            'processing_count': user_videos.filter(status='processing').count(),
+            'failed_count': user_videos.filter(status='failed').count(),
         })
-        
         return context
 
+@login_required
+def search_interface_view(request):
+    return render(request, 'video_processor/search_interface.html')
+
+@login_required
+@csrf_exempt
+def upload_video(request):
+    if request.method == 'POST':
+        # Handle file upload with user ownership
+        if 'video_file' in request.FILES:
+            video_file = request.FILES['video_file']
+            # Save with user association
+            job = VideoJob.objects.create(
+                user=request.user,
+                video_path=video_file.name,
+                title=video_file.name,
+                status='pending'
+            )
+            return JsonResponse({'status': 'success', 'job_id': job.id})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
 
 def search_videos(request):
     """Enhanced search through video transcriptions with semantic capabilities."""
@@ -1609,3 +1622,116 @@ def api_ai_status(request):
             'configuration_error': str(e),
             'status': 'AI system installed but configuration failed - fallback to regular search'
         })
+
+
+@login_required
+@csrf_exempt
+def edit_transcript(request, job_id):
+    """Allow users to edit transcript content."""
+    try:
+        # Ensure user can only edit their own videos
+        job = get_object_or_404(VideoJob, job_id=job_id, user=request.user)
+        
+        if request.method == 'GET':
+            # Return current transcript for editing
+            transcript_text = ""
+            if job.transcription and 'segments' in job.transcription:
+                # Extract text from segments
+                segments = job.transcription['segments']
+                transcript_text = '\n'.join([seg.get('text', '').strip() for seg in segments])
+            elif job.transcript:
+                transcript_text = job.transcript
+                
+            return JsonResponse({
+                'status': 'success',
+                'transcript': transcript_text,
+                'job_id': str(job.job_id),
+                'title': job.video_name
+            })
+            
+        elif request.method == 'POST':
+            # Save edited transcript
+            data = json.loads(request.body)
+            new_transcript = data.get('transcript', '').strip()
+            
+            # Update the transcript field
+            job.transcript = new_transcript
+            
+            # Update transcription JSON structure if it exists
+            if job.transcription and 'segments' in job.transcription:
+                # Split the edited text back into segments (simple approach)
+                lines = new_transcript.split('\n')
+                segments = job.transcription['segments']
+                
+                # Update segments with new text (preserve timing if available)
+                for i, line in enumerate(lines[:len(segments)]):
+                    if i < len(segments):
+                        segments[i]['text'] = line.strip()
+                
+                # Add new segments for additional lines
+                for i in range(len(segments), len(lines)):
+                    segments.append({
+                        'text': lines[i].strip(),
+                        'start': segments[-1]['end'] if segments else 0,
+                        'end': segments[-1]['end'] + 5 if segments else 5
+                    })
+                
+                job.transcription['segments'] = segments
+            
+            job.save()
+            
+            # Rebuild search index if needed
+            try:
+                if search_engine.is_initialized:
+                    logger.info(f"Rebuilding search index after transcript edit for job {job_id}")
+                    search_engine.rebuild_index()
+            except Exception as e:
+                logger.warning(f"Could not rebuild search index: {e}")
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Transcript updated successfully'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error editing transcript for job {job_id}: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+@login_required
+def transcript_editor_view(request, job_id):
+    """Render the transcript editor page."""
+    job = get_object_or_404(VideoJob, job_id=job_id, user=request.user)
+    return render(request, 'video_processor/transcript_editor.html', {
+        'job': job,
+        'job_id': str(job.job_id)
+    })
+
+
+def health_check(request):
+    """Health check endpoint for Docker container monitoring."""
+    try:
+        # Check database connectivity
+        VideoJob.objects.count()
+        
+        # Check if core services are available
+        health_status = {
+            'status': 'healthy',
+            'timestamp': datetime.now().isoformat(),
+            'database': 'connected',
+            'search_engine': 'available' if search_engine.is_available else 'unavailable',
+            'whisper': 'available',  # If we got here, imports worked
+        }
+        
+        return JsonResponse(health_status)
+        
+    except Exception as e:
+        health_status = {
+            'status': 'unhealthy',
+            'timestamp': datetime.now().isoformat(),
+            'error': str(e)
+        }
+        return JsonResponse(health_status, status=503)

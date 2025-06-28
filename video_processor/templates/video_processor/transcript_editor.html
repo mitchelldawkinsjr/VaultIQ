@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaultIQ - Edit Transcript</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+            color: white;
+            padding: 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .editor-section {
+            padding: 40px;
+        }
+
+        .video-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #3498db;
+        }
+
+        .video-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .video-id {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .editor-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        #transcript-editor {
+            width: 100%;
+            min-height: 400px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        #transcript-editor:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .save-status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .save-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .save-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .word-count {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Transcript Editor</h1>
+            <p>Edit and improve your video transcript for better search results</p>
+        </div>
+
+        <div class="editor-section">
+            <div class="video-info">
+                <div class="video-title">{{ job.video_name }}</div>
+                <div class="video-id">Job ID: {{ job_id }}</div>
+            </div>
+
+            <div class="editor-controls">
+                <button id="save-btn" class="btn btn-success">💾 Save Changes</button>
+                <button id="revert-btn" class="btn btn-secondary">↶ Revert Changes</button>
+                <a href="{% url 'library' %}" class="btn btn-primary">← Back to Library</a>
+            </div>
+
+            <div class="loading" id="loading">
+                Loading transcript...
+            </div>
+
+            <div id="editor-container" style="display: none;">
+                <textarea id="transcript-editor" placeholder="Start editing your transcript..."></textarea>
+                <div class="word-count" id="word-count">0 words</div>
+            </div>
+
+            <div class="save-status" id="save-status"></div>
+        </div>
+    </div>
+
+    <script>
+        let originalTranscript = '';
+        let currentJobId = '{{ job_id }}';
+
+        // Load transcript on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTranscript();
+        });
+
+        async function loadTranscript() {
+            try {
+                const response = await fetch(`/edit-transcript/${currentJobId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    }
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    originalTranscript = data.transcript;
+                    document.getElementById('transcript-editor').value = data.transcript;
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('editor-container').style.display = 'block';
+                    updateWordCount();
+                } else {
+                    showStatus('Error loading transcript: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showStatus('Error loading transcript: ' + error.message, 'error');
+            }
+        }
+
+        async function saveTranscript() {
+            const transcript = document.getElementById('transcript-editor').value;
+            const saveBtn = document.getElementById('save-btn');
+            
+            saveBtn.textContent = '💾 Saving...';
+            saveBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/edit-transcript/${currentJobId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({ transcript: transcript })
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    originalTranscript = transcript;
+                    showStatus('Transcript saved successfully! Search index updated.', 'success');
+                } else {
+                    showStatus('Error saving transcript: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showStatus('Error saving transcript: ' + error.message, 'error');
+            } finally {
+                saveBtn.textContent = '💾 Save Changes';
+                saveBtn.disabled = false;
+            }
+        }
+
+        function revertChanges() {
+            document.getElementById('transcript-editor').value = originalTranscript;
+            updateWordCount();
+            showStatus('Changes reverted to last saved version.', 'success');
+        }
+
+        function updateWordCount() {
+            const text = document.getElementById('transcript-editor').value;
+            const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+            document.getElementById('word-count').textContent = `${wordCount} words`;
+        }
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('save-status');
+            statusEl.textContent = message;
+            statusEl.className = `save-status ${type}`;
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Event listeners
+        document.getElementById('save-btn').addEventListener('click', saveTranscript);
+        document.getElementById('revert-btn').addEventListener('click', revertChanges);
+        document.getElementById('transcript-editor').addEventListener('input', updateWordCount);
+    </script>
+</body>
+</html> 
