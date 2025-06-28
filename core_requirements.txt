@@ -35,13 +35,11 @@ faiss-cpu==1.7.4
 numpy==1.24.3
 
 # Enhanced AI Models for Phase 2
-# Better embedding models
-BAAI/bge-large-en-v1.5  # Enhanced semantic search model
-all-mpnet-base-v2        # Alternative high-quality embedding model
-
-# QA Models
-deepset/roberta-base-squad2  # Extractive Q&A
-google/flan-t5-base         # Generative Q&A
+# Note: Model names below are downloaded automatically by transformers/sentence-transformers
+# - BAAI/bge-large-en-v1.5 (Enhanced semantic search model)
+# - all-mpnet-base-v2 (Alternative high-quality embedding model)
+# - deepset/roberta-base-squad2 (Extractive Q&A)
+# - google/flan-t5-base (Generative Q&A)
 
 # Enhanced AI Features
 aiohttp==3.8.5
