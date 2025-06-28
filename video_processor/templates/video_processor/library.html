@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaultIQ - Video Library & Management</title>
+    {% load static %}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+            display: block;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .upload-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .upload-form {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .tab-button {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: #7f8c8d;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+        
+        .tab-button.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+        
+        .tab-button:hover {
+            color: #2980b9;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .file-input-wrapper, .youtube-input-wrapper {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .file-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            background: #f8f9fa;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-input:hover {
+            border-color: #2980b9;
+            background: #e3f2fd;
+        }
+        
+        .youtube-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e74c3c;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+        
+        .youtube-input:focus {
+            outline: none;
+            border-color: #c0392b;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+        }
+        
+        .youtube-input:valid {
+            border-color: #27ae60;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .search-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1.1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .search-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .search-mode-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .search-mode-controls label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-right: 10px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .radio-option:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .radio-option input[type="radio"] {
+            margin-bottom: 5px;
+        }
+
+        .radio-option input[type="radio"]:checked + span {
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .radio-option.checked,
+        .radio-option:has(input[type="radio"]:checked) {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+
+        .radio-option span {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .radio-option small {
+            color: #7f8c8d;
+            font-size: 0.8em;
+        }
+
+        .search-help {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .relevance-score {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .search-type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 8px;
+        }
+
+        .search-type-semantic {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .search-type-keyword {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .search-type-hybrid {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .youtube-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #ff4444;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .storage-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #27ae60;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        /* Admin Panel Styles */
+        .admin-tab-button {
+            font-size: 0.9em;
+            padding: 10px 20px;
+        }
+        
+        .admin-tab-content {
+            display: none;
+        }
+        
+        .admin-tab-content.active {
+            display: block;
+        }
+        
+        .admin-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .admin-result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .admin-result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .admin-result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-panel {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .stat-panel h5 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-panel .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .pending-job {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        
+        .pending-job h5 {
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+        }
+        
+        .pending-job .job-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+        
+        .btn-process {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            font-size: 0.7em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn-process:hover {
+            background: #218838;
+        }
+
+        /* Admin Panel Styles */
+        .admin-tab-button {
+            font-size: 0.9em;
+            padding: 10px 20px;
+        }
+        
+        .admin-tab-content {
+            display: none;
+        }
+        
+        .admin-tab-content.active {
+            display: block;
+        }
+        
+        .admin-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .admin-result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .admin-result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .admin-result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-panel {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .stat-panel h5 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-panel .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .pending-job {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        
+        .pending-job h5 {
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+        }
+        
+        .pending-job .job-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+        
+        .btn-process {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            font-size: 0.7em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn-process:hover {
+            background: #218838;
+        }
+        
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .video-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .video-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .video-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            word-break: break-word;
+        }
+        
+        .video-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .video-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #138496;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .search-results {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .search-result-video {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .search-result-video:last-child {
+            margin-bottom: 0;
+        }
+        
+        .search-segment {
+            margin: 8px 0;
+            padding: 12px;
+            background: #fff3cd;
+            border-radius: 6px;
+            border-left: 4px solid #ffc107;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .segment-content {
+            flex: 1;
+        }
+        
+        .segment-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-segment {
+            padding: 4px 8px;
+            font-size: 0.8em;
+            border-radius: 4px;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .search-highlight {
+            background: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .messages {
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 95%;
+            max-height: 95%;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        /* Progress Snackbar Styles */
+        .progress-snackbar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            min-width: 350px;
+            max-width: 450px;
+            transform: translateY(100px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 1000;
+        }
+
+        .progress-snackbar.visible {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .progress-content {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            gap: 15px;
+        }
+
+        .progress-icon {
+            font-size: 24px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .progress-text {
+            flex: 1;
+        }
+
+        .progress-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .progress-detail {
+            color: #7f8c8d;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .progress-actions {
+            margin-left: auto;
+        }
+
+        .progress-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #7f8c8d;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .progress-close:hover {
+            background: #f8f9fa;
+            color: #2c3e50;
+        }
+
+        .progress-bar {
+            height: 3px;
+            background: #f1f2f6;
+            margin: 0;
+            border-radius: 0 0 12px 12px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -100% 0; }
+            100% { background-position: 100% 0; }
+        }
+
+        .progress-fill.processing {
+            background: linear-gradient(90deg, #3498db 0%, #2980b9 25%, #3498db 50%, #2980b9 75%, #3498db 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite linear;
+        }
+
+        .progress-fill.completed {
+            background: #27ae60;
+            animation: none;
+        }
+
+        .progress-fill.failed {
+            background: #e74c3c;
+            animation: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧠 VaultIQ Library</h1>
+            <p>Search and analyze your video content with AI-powered transcription</p>
+            
+            <!-- Navigation -->
+            <div style="margin: 20px 0; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                <a href="/" style="color: rgba(255,255,255,0.9); text-decoration: none; font-size: 0.9rem; padding: 8px 16px; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; transition: all 0.3s ease; background: rgba(255,255,255,0.1);" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">🔍 Clean Search</a>
+                <a href="/admin/" style="color: rgba(255,255,255,0.9); text-decoration: none; font-size: 0.9rem; padding: 8px 16px; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; transition: all 0.3s ease; background: rgba(255,255,255,0.1);" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">⚙️ Admin Panel</a>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-number">{{ stats.total_videos }}</span>
+                    <span class="stat-label">Videos</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ stats.total_words }}</span>
+                    <span class="stat-label">Words Transcribed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ stats.total_processing_time|floatformat:1 }}s</span>
+                    <span class="stat-label">Processing Time</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ stats.pending_jobs }}</span>
+                    <span class="stat-label">Pending Jobs</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message {{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h2>📁 Add New Video</h2>
+            
+            <!-- Tab Navigation -->
+            <div style="display: flex; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+                <button id="fileTab" class="tab-button active" onclick="showTab('file')">
+                    📁 Upload File
+                </button>
+                <button id="youtubeTab" class="tab-button" onclick="showTab('youtube')">
+                    📺 YouTube URL
+                </button>
+            </div>
+            
+            <!-- File Upload Tab -->
+            <div id="fileUpload" class="tab-content active">
+                <form method="post" action="{% url 'upload_video' %}" enctype="multipart/form-data" class="upload-form">
+                    {% csrf_token %}
+                    <div class="file-input-wrapper">
+                        <input type="file" name="video" accept="video/*" class="file-input" 
+                               placeholder="Choose video file...">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        🚀 Upload & Process
+                    </button>
+                </form>
+                <p style="margin-top: 15px; color: #7f8c8d; font-size: 0.9em;">
+                    Supported formats: MP4, AVI, MOV, WMV, FLV, MKV
+                </p>
+            </div>
+            
+            <!-- YouTube URL Tab -->
+            <div id="youtubeUpload" class="tab-content">
+                <form method="post" action="{% url 'upload_video' %}" class="upload-form">
+                    {% csrf_token %}
+                    <div class="youtube-input-wrapper">
+                        <input type="url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=..." 
+                               class="youtube-input" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        📺 Download & Process
+                    </button>
+                </form>
+                <p style="margin-top: 15px; color: #7f8c8d; font-size: 0.9em;">
+                    Supports YouTube, YouTube Shorts, and most YouTube URL formats<br>
+                    ⚠️ Maximum duration: 60 minutes
+                </p>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <h2>🔍 Search Videos</h2>
+            <form method="post" action="{% url 'search_videos' %}" class="search-form">
+                {% csrf_token %}
+                <div class="search-controls">
+                    <input type="text" name="query" placeholder="Search for words, phrases, or describe content naturally..." class="search-input" value="{{ query|default:'' }}">
+                    
+                    <div class="search-mode-controls">
+                        <label>Search Mode:</label>
+                        <div class="radio-group">
+                            {% if semantic_available %}
+                                <label class="radio-option">
+                                    <input type="radio" name="search_mode" value="hybrid" {% if search_mode == 'hybrid' or not search_mode %}checked{% endif %}>
+                                    <span>🧠 Smart Search</span>
+                                    <small>AI + Keywords</small>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="search_mode" value="semantic" {% if search_mode == 'semantic' %}checked{% endif %}>
+                                    <span>🤖 AI Search</span>
+                                    <small>Natural Language</small>
+                                </label>
+                            {% endif %}
+                            <label class="radio-option">
+                                <input type="radio" name="search_mode" value="keyword" {% if search_mode == 'keyword' or not semantic_available %}checked{% endif %}>
+                                <span>🔤 Keyword Search</span>
+                                <small>Exact Matches</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    {% if semantic_available %}
+                        🚀 Search
+                    {% else %}
+                        🔍 Search
+                    {% endif %}
+                </button>
+            </form>
+            
+            {% if semantic_available %}
+                <div class="search-help">
+                    <strong>🧠 AI Search Examples:</strong> 
+                    "videos about relationships", "cooking techniques", "financial advice", "funny moments"
+                </div>
+            {% else %}
+                <div class="search-help">
+                    <strong>💡 Tip:</strong> Install AI search dependencies for semantic search capabilities.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Search Results -->
+        {% if search_results %}
+            <div class="search-results">
+                <h2>🎯 Search Results for "{{ query }}"</h2>
+                <div style="margin-bottom: 20px;">
+                    <p style="color: #7f8c8d; margin: 0;">
+                        Found {{ search_results|length }} video{{ search_results|length|pluralize }} with matching content
+                        {% if search_mode %}
+                            using 
+                            {% if search_mode == 'semantic' %}
+                                <strong>🤖 AI Search</strong> - Natural language understanding
+                            {% elif search_mode == 'hybrid' %}
+                                <strong>🧠 Smart Search</strong> - AI + keyword matching
+                            {% else %}
+                                <strong>🔤 Keyword Search</strong> - Exact text matching
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                    {% if semantic_available and search_mode != 'keyword' %}
+                        <p style="color: #27ae60; margin: 5px 0 0 0; font-size: 0.9em;">
+                            ✨ Results ranked by semantic relevance and context understanding
+                        </p>
+                    {% endif %}
+                </div>
+                
+                {% for result in search_results %}
+                    <div class="search-result-video">
+                        <h3 class="video-title">📹 {{ result.video.video_name }}</h3>
+                        <div class="video-meta">
+                            <span>⏱️ Duration: {{ result.video.duration_seconds|floatformat:1 }}s</span>
+                            <span>🗣️ Language: {{ result.video.language|default:"unknown" }}</span>
+                            <span>📝 Words: {{ result.video.word_count }}</span>
+                            <span>📅 {{ result.video.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        
+                        <h4>Matching Segments:</h4>
+                        {% for segment in result.segments %}
+                            <div class="search-segment">
+                                <div class="segment-content">
+                                    <strong>⏰ {{ segment.start_time|floatformat:1 }}s - {{ segment.end_time|floatformat:1 }}s:</strong>
+                                    {% if segment.relevance_score %}
+                                        <span class="relevance-score">{{ segment.relevance_score|floatformat:2 }}</span>
+                                    {% endif %}
+                                    {% if segment.search_type %}
+                                        <span class="search-type-badge search-type-{{ segment.search_type }}">{{ segment.search_type }}</span>
+                                    {% endif %}
+                                    <div>{{ segment.text|safe }}</div>
+                                </div>
+                                <div class="segment-actions">
+                                    <button class="btn btn-success btn-segment" onclick="playSegment('{{ result.video.job_id }}', {{ segment.start_time }})">
+                                        ▶️ Play
+                                    </button>
+                                    <button class="btn btn-info btn-segment" onclick="showSegmentDetails('{{ result.video.job_id }}', {{ segment.start_time }}, {{ segment.end_time }}, '{{ segment.text|escapejs }}')">
+                                        ℹ️ Details
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Admin Panel -->
+        <div class="admin-section" style="background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 30px; margin-bottom: 30px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
+            <h2>⚙️ Admin Panel</h2>
+            
+            <!-- Admin Tabs -->
+            <div style="margin-bottom: 20px;">
+                <button class="tab-button admin-tab-button active" onclick="showAdminTab('search-management')">
+                    🔍 Search Management
+                </button>
+                <button class="tab-button admin-tab-button" onclick="showAdminTab('storage-management')">
+                    💾 Storage Management
+                </button>
+                <button class="tab-button admin-tab-button" onclick="showAdminTab('job-management')">
+                    ⚙️ Job Management
+                </button>
+                <button class="tab-button admin-tab-button" onclick="showAdminTab('statistics')">
+                    📊 Statistics
+                </button>
+            </div>
+
+            <!-- Search Management Tab -->
+            <div id="admin-search-management" class="admin-tab-content active">
+                <h3>🔍 Search Index Management</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h4>Current Index Status</h4>
+                        <div id="search-stats-display">Loading...</div>
+                        <button class="btn btn-info btn-small" onclick="refreshSearchStats()" style="margin-top: 10px;">
+                            🔄 Refresh Stats
+                        </button>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h4>Index Management</h4>
+                        <button class="btn btn-primary" onclick="rebuildSearchIndex()" style="margin-bottom: 10px;">
+                            🔄 Rebuild Search Index
+                        </button>
+                        <p style="color: #7f8c8d; font-size: 0.9em; margin: 0;">
+                            Rebuilds the semantic search index with all completed videos
+                        </p>
+                    </div>
+                </div>
+                <div id="search-management-result" style="margin-top: 15px;"></div>
+            </div>
+
+            <!-- Storage Management Tab -->
+            <div id="admin-storage-management" class="admin-tab-content">
+                <h3>💾 Storage Management</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h4>YouTube Video Cleanup</h4>
+                        <p style="color: #7f8c8d; font-size: 0.9em; margin-bottom: 15px;">
+                            Remove YouTube video files to save storage (keeps transcriptions)
+                        </p>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <button class="btn btn-info" onclick="cleanupYouTube(true)">
+                                👁️ Dry Run (Preview)
+                            </button>
+                            <button class="btn btn-danger" onclick="cleanupYouTube(false)">
+                                🗑️ Clean Up
+                            </button>
+                        </div>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h4>Storage Statistics</h4>
+                        <div id="storage-stats-display">Loading...</div>
+                        <button class="btn btn-info btn-small" onclick="refreshStorageStats()" style="margin-top: 10px;">
+                            🔄 Refresh Stats
+                        </button>
+                    </div>
+                </div>
+                <div id="storage-management-result" style="margin-top: 15px;"></div>
+            </div>
+
+            <!-- Job Management Tab -->
+            <div id="admin-job-management" class="admin-tab-content">
+                <h3>⚙️ Job Management</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h4>Pending Jobs</h4>
+                        <div id="pending-jobs-display">Loading...</div>
+                        <button class="btn btn-info btn-small" onclick="refreshPendingJobs()" style="margin-top: 10px;">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h4>Timestamp Lookup</h4>
+                        <div style="margin-bottom: 15px;">
+                            <input type="text" id="timestamp-job-id" placeholder="Job ID" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <input type="number" id="timestamp-value" placeholder="Timestamp (seconds)" step="0.1" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <button class="btn btn-primary btn-small" onclick="lookupTimestamp()">
+                                🕐 Get Content
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="job-management-result" style="margin-top: 15px;"></div>
+            </div>
+
+            <!-- Statistics Tab -->
+            <div id="admin-statistics" class="admin-tab-content">
+                <h3>📊 Detailed Statistics</h3>
+                <div id="detailed-stats-display" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    Loading detailed statistics...
+                </div>
+                <button class="btn btn-info" onclick="refreshDetailedStats()" style="margin-top: 20px;">
+                    🔄 Refresh Statistics
+                </button>
+            </div>
+        </div>
+
+        <!-- Video Library -->
+        <div class="video-library">
+            <h2>📚 Video Library</h2>
+            {% if videos %}
+                <div class="video-grid">
+                    {% for video in videos %}
+                        <div class="video-card">
+                            <div class="video-title">
+                                📹 {{ video.video_name }}
+                                {% if video.is_youtube_video %}
+                                    <span class="youtube-badge">📺 YouTube</span>
+                                {% endif %}
+                                {% if "[CLEANED_UP]" in video.video_path %}
+                                    <span class="storage-badge">💾 Optimized</span>
+                                {% endif %}
+                            </div>
+                            <div class="video-meta">
+                                <span>⏱️ {{ video.duration_seconds|floatformat:1 }}s</span>
+                                <span>📏 {{ video.resolution }}</span>
+                                <span>🗣️ {{ video.language|default:"unknown" }}</span>
+                                <span>📝 {{ video.word_count }} words</span>
+                                <span>📅 {{ video.created_at|date:"M d, Y" }}</span>
+                                <span>⚡ {{ video.processing_time|floatformat:2 }}s</span>
+                            </div>
+                            
+                            {% if video.transcription_text %}
+                                <div style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 0.9em; color: #6c757d;">
+                                    {{ video.transcription_text|truncatewords:20 }}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="video-actions">
+                                <button class="btn btn-info btn-small" onclick="showVideoTimeline('{{ video.job_id }}', '{{ video.video_name|escapejs }}')">
+                                    📋 Timeline
+                                </button>
+                                <button class="btn btn-info btn-small" onclick="searchInVideo('{{ video.job_id }}')">
+                                    🔍 Search
+                                </button>
+                                <form method="post" action="{% url 'delete_video' video.job_id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this video?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-small">
+                                        🗑️ Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 60px 20px; color: #7f8c8d;">
+                    <div style="font-size: 4em; margin-bottom: 20px;">📹</div>
+                    <h3>No videos yet</h3>
+                    <p>Upload your first video to get started!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Progress Snackbar -->
+    <div id="progressSnackbar" class="progress-snackbar">
+        <div class="progress-content">
+            <div class="progress-icon">⏳</div>
+            <div class="progress-text">
+                <div class="progress-title" id="progressTitle">Processing video...</div>
+                <div class="progress-detail" id="progressDetail">Analyzing content and generating transcription</div>
+            </div>
+            <div class="progress-actions">
+                <button class="progress-close" onclick="hideProgressSnackbar()">&times;</button>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+    <!-- Modal for video player/details -->
+    <div id="videoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Video Player</div>
+                <button class="modal-close" onclick="closeVideoModal()">&times;</button>
+            </div>
+            <div id="modalBody">
+                <!-- Modal content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentVideoModal = null;
+
+        function playSegment(jobId, timestamp) {
+            // Fetch video details to check if it's a YouTube video
+            fetch(`/api/video/${jobId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const modal = document.getElementById('videoModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalBody = document.getElementById('modalBody');
+                    
+                    modalTitle.textContent = `Video Player - ${timestamp.toFixed(1)}s`;
+                    
+                    let playerHtml;
+                    if (data.is_youtube && data.youtube_video_id) {
+                        // YouTube player
+                        const youtubeStartTime = Math.floor(timestamp);
+                        playerHtml = `
+                            <div style="max-width: 800px; width: 100%;">
+                                <div id="youtubePlayerContainer" style="position: relative; width: 100%; height: 450px; border-radius: 8px; overflow: hidden; background: #000;">
+                                    <iframe id="youtubePlayer" width="100%" height="450" 
+                                            src="https://www.youtube.com/embed/${data.youtube_video_id}?start=${youtubeStartTime}&autoplay=1&enablejsapi=1" 
+                                            frameborder="0" 
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                            allowfullscreen>
+                                    </iframe>
+                                </div>
+                                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <strong>⏰ Current Timestamp: ${timestamp.toFixed(1)}s</strong>
+                                        <div>
+                                            <button class="btn btn-info btn-small" onclick="copyTimestamp(${timestamp})">📋 Copy Timestamp</button>
+                                            <button class="btn btn-primary btn-small" onclick="shareSegment('${jobId}', ${timestamp})">🔗 Share Segment</button>
+                                            <a href="${data.youtube_url}" target="_blank" class="btn btn-warning btn-small">🎥 Open on YouTube</a>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <button class="btn btn-success btn-small" onclick="seekYouTubeToTimestamp(${timestamp})">⏭️ Jump to Timestamp</button>
+                                        <button class="btn btn-info btn-small" onclick="seekYouTubeRelative(-10)">⏪ -10s</button>
+                                        <button class="btn btn-info btn-small" onclick="seekYouTubeRelative(10)">⏩ +10s</button>
+                                        <span style="font-weight: bold;">YouTube Player</span>
+                                    </div>
+                                    <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                                        <strong>Note:</strong> Video file was cleaned up to save storage. Playing from YouTube directly.
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Local video player
+                        playerHtml = `
+                            <div style="max-width: 800px; width: 100%;">
+                                <video id="videoPlayer" width="100%" height="450" controls preload="metadata" style="border-radius: 8px; background: #000;">
+                                    <source src="/video-file/${jobId}/" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <strong>⏰ Current Timestamp: ${timestamp.toFixed(1)}s</strong>
+                                        <div>
+                                            <button class="btn btn-info btn-small" onclick="copyTimestamp(${timestamp})">📋 Copy Timestamp</button>
+                                            <button class="btn btn-primary btn-small" onclick="shareSegment('${jobId}', ${timestamp})">🔗 Share Segment</button>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <button class="btn btn-success btn-small" onclick="seekToTimestamp(${timestamp})">⏭️ Jump to Timestamp</button>
+                                        <button class="btn btn-info btn-small" onclick="rewind10()">⏪ -10s</button>
+                                        <button class="btn btn-info btn-small" onclick="forward10()">⏩ +10s</button>
+                                        <span id="currentTime" style="font-weight: bold;">0:00</span>
+                                        <span>/</span>
+                                        <span id="totalDuration">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    modalBody.innerHTML = playerHtml;
+                    modal.style.display = 'flex';
+                    currentVideoModal = modal;
+                    
+                    // Initialize appropriate player
+                    setTimeout(() => {
+                        if (data.is_youtube && data.youtube_video_id) {
+                            initializeYouTubePlayer(data.youtube_video_id, timestamp);
+                        } else {
+                            initializeVideoPlayer(timestamp);
+                        }
+                    }, 100);
+                })
+                .catch(error => {
+                    console.error('Error fetching video details:', error);
+                    alert('Error loading video player');
+                });
+        }
+
+        function initializeVideoPlayer(seekTime = 0) {
+            const video = document.getElementById('videoPlayer');
+            const currentTimeSpan = document.getElementById('currentTime');
+            const totalDurationSpan = document.getElementById('totalDuration');
+            
+            if (!video) return;
+            
+            // Wait for video metadata to load
+            video.addEventListener('loadedmetadata', function() {
+                // Set total duration
+                totalDurationSpan.textContent = formatTime(video.duration);
+                
+                // Seek to specified timestamp
+                if (seekTime > 0) {
+                    video.currentTime = seekTime;
+                }
+            });
+            
+            // Update current time display
+            video.addEventListener('timeupdate', function() {
+                currentTimeSpan.textContent = formatTime(video.currentTime);
+            });
+            
+            // Handle errors
+            video.addEventListener('error', function(e) {
+                console.error('Video error:', e);
+                document.getElementById('modalBody').innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 3em; margin-bottom: 20px;">❌</div>
+                        <h3>Video Loading Error</h3>
+                        <p>Unable to load the video file. Please try again.</p>
+                        <p style="color: #7f8c8d; font-size: 0.9em;">Error: ${e.message || 'Unknown error'}</p>
+                    </div>
+                `;
+            });
+            
+            // Load the video
+            video.load();
+        }
+
+        function seekToTimestamp(timestamp) {
+            const video = document.getElementById('videoPlayer');
+            if (video) {
+                video.currentTime = timestamp;
+                video.play();
+            }
+        }
+
+        function rewind10() {
+            const video = document.getElementById('videoPlayer');
+            if (video) {
+                video.currentTime = Math.max(0, video.currentTime - 10);
+            }
+        }
+
+        function forward10() {
+            const video = document.getElementById('videoPlayer');
+            if (video) {
+                video.currentTime = Math.min(video.duration, video.currentTime + 10);
+            }
+        }
+
+        // YouTube player functions
+        function initializeYouTubePlayer(videoId, seekTime = 0) {
+            // YouTube iframe API will handle the seeking via the start parameter
+            console.log(`YouTube player initialized for video ${videoId} at ${seekTime}s`);
+        }
+
+        function seekYouTubeToTimestamp(timestamp) {
+            const iframe = document.getElementById('youtubePlayer');
+            if (iframe) {
+                const youtubeStartTime = Math.floor(timestamp);
+                // Update iframe src to seek to new timestamp
+                const currentSrc = iframe.src;
+                const baseUrl = currentSrc.split('?')[0];
+                iframe.src = `${baseUrl}?start=${youtubeStartTime}&autoplay=1&enablejsapi=1`;
+            }
+        }
+
+        function seekYouTubeRelative(seconds) {
+            // For relative seeking, we'd need the YouTube API
+            // For now, just show a message
+            alert(`YouTube relative seeking: ${seconds > 0 ? '+' : ''}${seconds}s\nThis feature requires YouTube API integration.`);
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function showSegmentDetails(jobId, startTime, endTime, text) {
+            const modal = document.getElementById('videoModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            modalTitle.textContent = 'Segment Details';
+            modalBody.innerHTML = `
+                <div>
+                    <h3>Segment Information</h3>
+                    <div style="margin: 20px 0;">
+                        <strong>Time Range:</strong> ${startTime.toFixed(1)}s - ${endTime.toFixed(1)}s<br>
+                        <strong>Duration:</strong> ${(endTime - startTime).toFixed(1)} seconds<br>
+                        <strong>Video:</strong> ${jobId}
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <strong>Content:</strong>
+                        <div style="padding: 15px; background: #f8f9fa; border-radius: 6px; margin-top: 10px;">
+                            ${text}
+                        </div>
+                    </div>
+                    <div style="margin-top: 30px;">
+                        <button class="btn btn-success" onclick="playSegment('${jobId}', ${startTime})">▶️ Play Segment</button>
+                        <button class="btn btn-info" onclick="copySegmentText('${text.replace(/'/g, "\\'")}')">📋 Copy Text</button>
+                        <button class="btn btn-primary" onclick="shareSegment('${jobId}', ${startTime})">🔗 Share</button>
+                    </div>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+            currentVideoModal = modal;
+        }
+
+        function showVideoTimeline(jobId, videoName) {
+            // Fetch video details and show timeline
+            fetch(`/api/video/${jobId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const modal = document.getElementById('videoModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalBody = document.getElementById('modalBody');
+                    
+                    modalTitle.textContent = `${videoName} - Timeline`;
+                    
+                    let segmentsHtml = '';
+                    if (data.segments && data.segments.length > 0) {
+                        segmentsHtml = data.segments.map((segment, index) => `
+                            <div class="search-segment" style="margin: 10px 0;">
+                                <div class="segment-content">
+                                    <strong>${segment.start_time.toFixed(1)}s - ${segment.end_time.toFixed(1)}s:</strong>
+                                    <div>${segment.text}</div>
+                                </div>
+                                <div class="segment-actions">
+                                    <button class="btn btn-success btn-segment" onclick="playSegment('${jobId}', ${segment.start_time})">▶️ Play</button>
+                                    <button class="btn btn-info btn-segment" onclick="seekVideoInTimeline(${segment.start_time})">⏭️ Seek</button>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        segmentsHtml = '<p>No timeline segments available.</p>';
+                    }
+                    
+                    let playerHtml;
+                    if (data.is_youtube && data.youtube_video_id) {
+                        // YouTube timeline player
+                        playerHtml = `
+                            <div style="margin-bottom: 20px;">
+                                <div style="position: relative; width: 100%; height: 450px; border-radius: 8px; overflow: hidden; background: #000;">
+                                    <iframe id="timelineYouTubePlayer" width="100%" height="450" 
+                                            src="https://www.youtube.com/embed/${data.youtube_video_id}?enablejsapi=1" 
+                                            frameborder="0" 
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                            allowfullscreen>
+                                    </iframe>
+                                </div>
+                                <div style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 6px; font-size: 0.9em;">
+                                    <strong>📺 YouTube Video:</strong> Video file was cleaned up to save storage. Playing from YouTube directly.
+                                    <a href="${data.youtube_url}" target="_blank" style="margin-left: 10px;">🔗 Open on YouTube</a>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Local video timeline player
+                        playerHtml = `
+                            <div style="margin-bottom: 20px;">
+                                <video id="timelineVideoPlayer" width="100%" height="450" controls preload="metadata" style="border-radius: 8px; background: #000;">
+                                    <source src="/video-file/${jobId}/" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        `;
+                    }
+                    
+                    modalBody.innerHTML = `
+                        <div style="max-width: 900px; width: 100%;">
+                            ${playerHtml}
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <h3>📊 Video Info</h3>
+                                    <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                                        <strong>Duration:</strong> ${data.metadata.duration_seconds.toFixed(1)} seconds<br>
+                                        <strong>Resolution:</strong> ${data.metadata.width_pixels}x${data.metadata.height_pixels}<br>
+                                        <strong>Total Segments:</strong> ${data.segment_count}<br>
+                                        <strong>Language:</strong> ${data.transcription.language}<br>
+                                        <strong>Word Count:</strong> ${data.transcription.word_count}
+                                    </div>
+                                    <button class="btn btn-info" onclick="copyFullTranscript('${data.transcription.text.replace(/'/g, "\\'")}')">📋 Copy Full Transcript</button>
+                                </div>
+                                
+                                <div>
+                                    <h3>📑 Timeline Segments</h3>
+                                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px;">
+                                        ${segmentsHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    modal.style.display = 'flex';
+                    currentVideoModal = modal;
+                    
+                    // Initialize timeline video player
+                    setTimeout(() => {
+                        if (data.is_youtube && data.youtube_video_id) {
+                            initializeTimelineYouTubePlayer(data.youtube_video_id);
+                        } else {
+                            initializeTimelinePlayer();
+                        }
+                    }, 100);
+                })
+                .catch(error => {
+                    console.error('Error fetching video details:', error);
+                    alert('Error loading video timeline');
+                });
+        }
+
+        function initializeTimelinePlayer() {
+            const video = document.getElementById('timelineVideoPlayer');
+            if (!video) return;
+            
+            video.addEventListener('error', function(e) {
+                console.error('Timeline video error:', e);
+            });
+            
+            video.load();
+        }
+
+        function initializeTimelineYouTubePlayer(videoId) {
+            console.log(`Timeline YouTube player initialized for video ${videoId}`);
+            // YouTube iframe will handle initialization automatically
+        }
+
+        function seekVideoInTimeline(timestamp) {
+            const video = document.getElementById('timelineVideoPlayer');
+            const youtubePlayer = document.getElementById('timelineYouTubePlayer');
+            
+            if (video) {
+                // Local video player
+                video.currentTime = timestamp;
+                video.play();
+            } else if (youtubePlayer) {
+                // YouTube player - update iframe src to seek to timestamp
+                const youtubeStartTime = Math.floor(timestamp);
+                const currentSrc = youtubePlayer.src;
+                const baseUrl = currentSrc.split('?')[0];
+                youtubePlayer.src = `${baseUrl}?start=${youtubeStartTime}&autoplay=1&enablejsapi=1`;
+            }
+        }
+
+        function searchInVideo(jobId) {
+            // Focus on search box and add video filter
+            const searchBox = document.querySelector('input[name="query"]');
+            searchBox.focus();
+            searchBox.value = `video:${jobId} `;
+        }
+
+        function closeVideoModal() {
+            if (currentVideoModal) {
+                currentVideoModal.style.display = 'none';
+                currentVideoModal = null;
+            }
+        }
+
+        function copyTimestamp(timestamp) {
+            navigator.clipboard.writeText(`${timestamp.toFixed(1)}s`).then(() => {
+                alert('Timestamp copied to clipboard!');
+            });
+        }
+
+        function copySegmentText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Segment text copied to clipboard!');
+            });
+        }
+
+        function copyFullTranscript(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Full transcript copied to clipboard!');
+            });
+        }
+
+        function shareSegment(jobId, timestamp) {
+            const url = `${window.location.origin}/video/${jobId}/?t=${timestamp}`;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Shareable link copied to clipboard!');
+            });
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && currentVideoModal) {
+                closeVideoModal();
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('videoModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeVideoModal();
+            }
+        });
+
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            if (tabName === 'file') {
+                document.getElementById('fileUpload').classList.add('active');
+                document.getElementById('fileTab').classList.add('active');
+            } else if (tabName === 'youtube') {
+                document.getElementById('youtubeUpload').classList.add('active');
+                document.getElementById('youtubeTab').classList.add('active');
+            }
+        }
+
+        // YouTube URL validation
+        function validateYouTubeUrl(url) {
+            const patterns = [
+                /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=[\w-]+)/,
+                /^(https?:\/\/)?(www\.)?(youtu\.be\/[\w-]+)/,
+                /^(https?:\/\/)?(www\.)?(youtube\.com\/embed\/[\w-]+)/,
+                /^(https?:\/\/)?(www\.)?(youtube\.com\/v\/[\w-]+)/
+            ];
+            
+            return patterns.some(pattern => pattern.test(url));
+        }
+
+        // Add real-time YouTube URL validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const youtubeInput = document.querySelector('.youtube-input');
+            if (youtubeInput) {
+                youtubeInput.addEventListener('input', function() {
+                    const url = this.value.trim();
+                    if (url && !validateYouTubeUrl(url)) {
+                        this.style.borderColor = '#e74c3c';
+                        this.style.boxShadow = '0 0 0 3px rgba(231, 76, 60, 0.1)';
+                    } else if (url && validateYouTubeUrl(url)) {
+                        this.style.borderColor = '#27ae60';
+                        this.style.boxShadow = '0 0 0 3px rgba(39, 174, 96, 0.1)';
+                    } else {
+                        this.style.borderColor = '#e74c3c';
+                        this.style.boxShadow = 'none';
+                    }
+                });
+            }
+
+            // Set up form submission handlers for progress tracking
+            setupProgressTracking();
+        });
+
+        // Progress tracking variables
+        let progressInterval = null;
+        let currentJobId = null;
+
+        function setupProgressTracking() {
+            // Add event listeners to upload forms
+            const uploadForms = document.querySelectorAll('.upload-form');
+            uploadForms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    // Don't prevent default - let form submit normally
+                    // Just show initial progress
+                    showProgressSnackbar();
+                    
+                    // Start checking for new jobs after a short delay
+                    setTimeout(() => {
+                        startJobPolling();
+                    }, 2000);
+                });
+            });
+        }
+
+        function showProgressSnackbar() {
+            const snackbar = document.getElementById('progressSnackbar');
+            const progressIcon = document.querySelector('.progress-icon');
+            const progressTitle = document.getElementById('progressTitle');
+            const progressDetail = document.getElementById('progressDetail');
+            const progressFill = document.getElementById('progressFill');
+
+            // Reset to initial state
+            progressIcon.textContent = '⏳';
+            progressTitle.textContent = 'Uploading video...';
+            progressDetail.textContent = 'Preparing for processing';
+            progressFill.className = 'progress-fill';
+            progressFill.style.width = '10%';
+
+            snackbar.classList.add('visible');
+        }
+
+        function hideProgressSnackbar() {
+            const snackbar = document.getElementById('progressSnackbar');
+            snackbar.classList.remove('visible');
+            
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+            currentJobId = null;
+        }
+
+        function startJobPolling() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+
+            progressInterval = setInterval(() => {
+                checkJobProgress();
+            }, 2000); // Check every 2 seconds
+
+            // Also check immediately
+            checkJobProgress();
+        }
+
+        function checkJobProgress() {
+            fetch('/api/jobs/latest/')
+                .then(response => response.json())
+                .then(latestJob => {
+                    if (latestJob.error) {
+                        console.log('No jobs found yet');
+                        return;
+                    }
+                    
+                    if (!currentJobId) {
+                        currentJobId = latestJob.job_id;
+                    }
+                    
+                    // Only track the current job
+                    if (latestJob.job_id === currentJobId) {
+                        updateProgressFromJob(latestJob);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking job progress:', error);
+                });
+        }
+
+        function updateProgressFromJob(job) {
+            const progressIcon = document.querySelector('.progress-icon');
+            const progressTitle = document.getElementById('progressTitle');
+            const progressDetail = document.getElementById('progressDetail');
+            const progressFill = document.getElementById('progressFill');
+
+            switch (job.status) {
+                case 'pending':
+                    progressIcon.textContent = '⏳';
+                    progressTitle.textContent = 'Video uploaded';
+                    progressDetail.textContent = 'Waiting in queue for processing...';
+                    progressFill.style.width = '20%';
+                    progressFill.className = 'progress-fill';
+                    break;
+
+                case 'processing':
+                    progressIcon.textContent = '⚙️';
+                    progressTitle.textContent = 'Processing video...';
+                    
+                    // Determine processing stage based on available data
+                    if (job.has_transcript && job.word_count > 0) {
+                        progressDetail.textContent = `Generating searchable segments (${job.word_count} words transcribed)`;
+                        progressFill.style.width = '85%';
+                    } else if (job.processing_time > 10) {
+                        progressDetail.textContent = 'Transcribing audio with AI (this may take a few minutes)';
+                        progressFill.style.width = '70%';
+                    } else {
+                        progressDetail.textContent = 'Extracting audio and preparing for transcription';
+                        progressFill.style.width = '60%';
+                    }
+                    
+                    progressFill.className = 'progress-fill processing';
+                    break;
+
+                case 'completed':
+                    // Check if the video is truly ready for searching
+                    if (job.is_searchable && job.has_transcript && job.has_segments) {
+                        progressIcon.textContent = '✅';
+                        progressTitle.textContent = 'Video ready for searching!';
+                        progressDetail.textContent = `Transcribed ${job.word_count} words with ${job.segment_count} segments in ${job.language}`;
+                        progressFill.style.width = '100%';
+                        progressFill.className = 'progress-fill completed';
+                        
+                        // Auto-hide after 5 seconds
+                        setTimeout(() => {
+                            hideProgressSnackbar();
+                            // Refresh the page to show the new video
+                            window.location.reload();
+                        }, 5000);
+                        
+                        // Stop polling
+                        if (progressInterval) {
+                            clearInterval(progressInterval);
+                            progressInterval = null;
+                        }
+                    } else {
+                        // Job marked complete but not searchable yet
+                        progressIcon.textContent = '⚠️';
+                        progressTitle.textContent = 'Processing incomplete';
+                        progressDetail.textContent = 'Video processed but missing transcription data';
+                        progressFill.style.width = '90%';
+                        progressFill.className = 'progress-fill failed';
+                        
+                        // Continue polling in case it's still processing
+                        setTimeout(() => {
+                            // Check if we should treat this as failed
+                            if (job.completed_at) {
+                                // Job says it's done but not searchable - mark as failed
+                                progressIcon.textContent = '❌';
+                                progressTitle.textContent = 'Processing incomplete';
+                                progressDetail.textContent = 'Video processed but not ready for searching';
+                                progressFill.className = 'progress-fill failed';
+                                
+                                setTimeout(() => {
+                                    hideProgressSnackbar();
+                                }, 8000);
+                                
+                                if (progressInterval) {
+                                    clearInterval(progressInterval);
+                                    progressInterval = null;
+                                }
+                            }
+                        }, 5000);
+                    }
+                    break;
+
+                case 'failed':
+                    progressIcon.textContent = '❌';
+                    progressTitle.textContent = 'Processing failed';
+                    progressDetail.textContent = 'There was an error processing your video';
+                    progressFill.style.width = '100%';
+                    progressFill.className = 'progress-fill failed';
+                    
+                    // Auto-hide after 8 seconds
+                    setTimeout(() => {
+                        hideProgressSnackbar();
+                    }, 8000);
+                    
+                    // Stop polling
+                    if (progressInterval) {
+                        clearInterval(progressInterval);
+                        progressInterval = null;
+                    }
+                    break;
+            }
+        }
+
+        // Admin Panel Functions
+        function showAdminTab(tabName) {
+            // Hide all admin tab contents
+            document.querySelectorAll('.admin-tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all admin tab buttons
+            document.querySelectorAll('.admin-tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(`admin-${tabName}`).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load data for the selected tab
+            if (tabName === 'search-management') {
+                refreshSearchStats();
+            } else if (tabName === 'storage-management') {
+                refreshStorageStats();
+            } else if (tabName === 'job-management') {
+                refreshPendingJobs();
+            } else if (tabName === 'statistics') {
+                refreshDetailedStats();
+            }
+        }
+
+        function showAdminResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="admin-result ${type}">${message}</div>`;
+        }
+
+        // Search Management Functions
+        function refreshSearchStats() {
+            const display = document.getElementById('search-stats-display');
+            display.innerHTML = 'Loading...';
+            
+            fetch('/api/search-status/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.available && data.initialized) {
+                        display.innerHTML = `
+                            <div style="color: #28a745;">✅ Search Engine Active</div>
+                            <div><strong>Model:</strong> ${data.model_name}</div>
+                            <div><strong>Indexed Segments:</strong> ${data.indexed_segments}</div>
+                        `;
+                    } else if (data.available) {
+                        display.innerHTML = `
+                            <div style="color: #ffc107;">⚠️ Search Engine Available but Not Initialized</div>
+                            <div><strong>Model:</strong> ${data.model_name}</div>
+                            <div>Click "Rebuild Search Index" to initialize</div>
+                        `;
+                    } else {
+                        display.innerHTML = `
+                            <div style="color: #dc3545;">❌ Search Engine Not Available</div>
+                            <div>AI search dependencies not installed</div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    display.innerHTML = `<div style="color: #dc3545;">Error: ${error.message}</div>`;
+                });
+        }
+
+        function rebuildSearchIndex() {
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '🔄 Rebuilding...';
+            button.disabled = true;
+
+            const formData = new FormData();
+            
+            fetch('/api/rebuild-search-index/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAdminResult('search-management-result', `✅ ${data.message}`, 'success');
+                    refreshSearchStats();
+                } else {
+                    showAdminResult('search-management-result', `❌ ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showAdminResult('search-management-result', `❌ Error: ${error.message}`, 'error');
+            })
+            .finally(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        }
+
+        // Storage Management Functions
+        function refreshStorageStats() {
+            refreshDetailedStats().then(data => {
+                const display = document.getElementById('storage-stats-display');
+                if (data && data.storage_stats) {
+                    display.innerHTML = `
+                        <div><strong>Total Storage:</strong> ${data.storage_stats.total_file_size_gb} GB</div>
+                        <div><strong>Videos:</strong> ${data.video_stats.total_videos}</div>
+                        <div style="margin-top: 10px; font-size: 0.9em; color: #7f8c8d;">
+                            Click cleanup to free space from YouTube videos
+                        </div>
+                    `;
+                } else {
+                    display.innerHTML = 'Error loading storage stats';
+                }
+            });
+        }
+
+        function cleanupYouTube(dryRun) {
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = dryRun ? '👁️ Analyzing...' : '🗑️ Cleaning...';
+            button.disabled = true;
+
+            const formData = new FormData();
+            formData.append('dry_run', dryRun);
+            
+            fetch('/api/cleanup-youtube/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let resultHtml = `<h4>${dryRun ? '📋 Cleanup Preview' : '✅ Cleanup Complete'}</h4>`;
+                    resultHtml += `<p><strong>Files ${dryRun ? 'that would be' : ''} processed:</strong> ${data.files_processed}</p>`;
+                    resultHtml += `<p><strong>Space ${dryRun ? 'that would be' : ''} freed:</strong> ${data.space_freed_mb} MB</p>`;
+                    
+                    if (data.files && data.files.length > 0) {
+                        resultHtml += '<p><strong>Files:</strong></p><ul>';
+                        data.files.forEach(file => {
+                            resultHtml += `<li>${file.name} (${file.size_mb} MB)</li>`;
+                        });
+                        resultHtml += '</ul>';
+                    }
+                    
+                    showAdminResult('storage-management-result', resultHtml, 'success');
+                    
+                    if (!dryRun) {
+                        refreshStorageStats();
+                    }
+                } else {
+                    showAdminResult('storage-management-result', `❌ ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showAdminResult('storage-management-result', `❌ Error: ${error.message}`, 'error');
+            })
+            .finally(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        }
+
+        // Job Management Functions
+        function refreshPendingJobs() {
+            const display = document.getElementById('pending-jobs-display');
+            display.innerHTML = 'Loading...';
+            
+            fetch('/api/pending-jobs/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.pending_jobs && data.pending_jobs.length > 0) {
+                        let html = `<p><strong>${data.count} pending job${data.count !== 1 ? 's' : ''}</strong></p>`;
+                        data.pending_jobs.forEach(job => {
+                            html += `
+                                <div class="pending-job">
+                                    <h5>${job.video_name}</h5>
+                                    <div class="job-meta">
+                                        <span>ID: ${job.job_id.substring(0, 8)}...</span>
+                                        <span>${job.file_size_mb} MB</span>
+                                        <button class="btn-process" onclick="processJob('${job.job_id}')">
+                                            ⚡ Process
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        display.innerHTML = html;
+                    } else {
+                        display.innerHTML = '<p style="color: #28a745;">✅ No pending jobs</p>';
+                    }
+                })
+                .catch(error => {
+                    display.innerHTML = `<div style="color: #dc3545;">Error: ${error.message}</div>`;
+                });
+        }
+
+        function processJob(jobId) {
+            const formData = new FormData();
+            formData.append('job_id', jobId);
+            
+            fetch('/api/process-job/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAdminResult('job-management-result', `✅ ${data.message}`, 'success');
+                    refreshPendingJobs();
+                    
+                    // Start progress tracking for this job
+                    currentJobId = data.job_id;
+                    showProgressSnackbar();
+                    startJobPolling();
+                } else {
+                    showAdminResult('job-management-result', `❌ ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showAdminResult('job-management-result', `❌ Error: ${error.message}`, 'error');
+            });
+        }
+
+        function lookupTimestamp() {
+            const jobId = document.getElementById('timestamp-job-id').value.trim();
+            const timestamp = parseFloat(document.getElementById('timestamp-value').value);
+            
+            if (!jobId || isNaN(timestamp)) {
+                showAdminResult('job-management-result', '❌ Please provide both Job ID and timestamp', 'error');
+                return;
+            }
+            
+            fetch(`/api/timestamp-content/${jobId}/?timestamp=${timestamp}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showAdminResult('job-management-result', `❌ ${data.error}`, 'error');
+                    } else {
+                        const html = `
+                            <h4>🕐 Content at ${data.timestamp}s</h4>
+                            <p><strong>Video:</strong> ${data.video_name}</p>
+                            <p><strong>Segment:</strong> ${data.segment.start_time}s - ${data.segment.end_time}s</p>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-top: 10px;">
+                                ${data.segment.text}
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-success btn-small" onclick="playSegment('${data.job_id}', ${data.segment.start_time})">
+                                    ▶️ Play Segment
+                                </button>
+                            </div>
+                        `;
+                        showAdminResult('job-management-result', html, 'success');
+                    }
+                })
+                .catch(error => {
+                    showAdminResult('job-management-result', `❌ Error: ${error.message}`, 'error');
+                });
+        }
+
+        // Statistics Functions
+        function refreshDetailedStats() {
+            return fetch('/api/detailed-stats/')
+                .then(response => response.json())
+                .then(data => {
+                    const display = document.getElementById('detailed-stats-display');
+                    
+                    if (data.error) {
+                        display.innerHTML = `<div style="color: #dc3545;">Error: ${data.error}</div>`;
+                        return null;
+                    }
+                    
+                    let html = '';
+                    
+                    // Video Stats
+                    html += `
+                        <div class="stat-panel">
+                            <h5>📹 Video Statistics</h5>
+                            <div class="stat-value">${data.video_stats.total_videos}</div>
+                            <div>Total Videos</div>
+                            <div style="margin-top: 10px; font-size: 0.9em;">
+                                <div>Pending: ${data.video_stats.pending_jobs}</div>
+                                <div>Processing: ${data.video_stats.processing_jobs}</div>
+                                <div>Failed: ${data.video_stats.failed_jobs}</div>
+                                <div>Recent (7d): ${data.video_stats.recent_jobs_7_days}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Processing Stats
+                    html += `
+                        <div class="stat-panel">
+                            <h5>⚙️ Processing Statistics</h5>
+                            <div class="stat-value">${data.processing_stats.total_processing_time}s</div>
+                            <div>Total Processing Time</div>
+                            <div style="margin-top: 10px; font-size: 0.9em;">
+                                <div>Avg: ${data.processing_stats.average_processing_time}s</div>
+                                <div>Content: ${data.processing_stats.total_duration_hours}h</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Content Stats
+                    html += `
+                        <div class="stat-panel">
+                            <h5>📝 Content Statistics</h5>
+                            <div class="stat-value">${data.content_stats.total_words.toLocaleString()}</div>
+                            <div>Total Words</div>
+                            <div style="margin-top: 10px; font-size: 0.9em;">
+                                Languages: ${Object.entries(data.content_stats.language_distribution).map(([lang, count]) => `${lang} (${count})`).join(', ') || 'None'}
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Storage Stats
+                    html += `
+                        <div class="stat-panel">
+                            <h5>💾 Storage Statistics</h5>
+                            <div class="stat-value">${data.storage_stats.total_file_size_gb}</div>
+                            <div>Total Storage (GB)</div>
+                        </div>
+                    `;
+                    
+                    // Search Stats
+                    if (data.search_stats && !data.search_stats.error) {
+                        html += `
+                            <div class="stat-panel">
+                                <h5>🔍 Search Statistics</h5>
+                                <div class="stat-value">${data.search_stats.indexed_segments || 0}</div>
+                                <div>Indexed Segments</div>
+                                <div style="margin-top: 10px; font-size: 0.9em;">
+                                    ${data.search_stats.is_initialized ? '✅ Active' : '❌ Not Initialized'}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    display.innerHTML = html;
+                    return data;
+                })
+                .catch(error => {
+                    const display = document.getElementById('detailed-stats-display');
+                    display.innerHTML = `<div style="color: #dc3545;">Error: ${error.message}</div>`;
+                    return null;
+                });
+        }
+
+        // Initialize admin panel on load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load initial data for default tab
+            refreshSearchStats();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,20 @@
+# Core Video Processor Requirements
+# Minimal dependencies for video processing functionality
+
+# Required for video processing
+opencv-python>=4.8.0
+
+# Required for transcription
+openai-whisper>=20230314
+torch>=2.0.0
+
+# Required for audio extraction
+ffmpeg-python>=0.2.0
+
+# Optional but recommended
+numpy>=1.24.0
+
+# AI Enhancement Dependencies (for Q/A pairs, topic classification, etc.)
+aiohttp>=3.8.0
+openai>=1.0.0
+python-dotenv>=1.0.0 
