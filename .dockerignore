@@ -3,28 +3,40 @@
 # Git and version control
 .git
 .gitignore
-*.md
 .github/
 
-# Python cache and virtual environments
+# Python cache and build files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Development files
-.env
-.env.local
-.env.development
-.env.test
-.env.production
+# Testing and development
+.pytest_cache/
+.coverage
+.tox/
+.nox/
+htmlcov/
+cover/
+*.cover
+*.py,cover
+.hypothesis/
 
 # IDE and editor files
 .vscode/
@@ -33,7 +45,7 @@ venv.bak/
 *.swo
 *~
 
-# OS generated files
+# OS files
 .DS_Store
 .DS_Store?
 ._*
@@ -42,40 +54,60 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
-logs/
+# Environment and secrets
+.env
+.env.*
+*.key
+*.pem
 
-# Testing
-.coverage
-.pytest_cache/
-.tox/
-.nox/
-htmlcov/
+# Documentation and README files (for smaller images)
+*.md
+docs/
+documentation/
 
-# Build artifacts
-build/
-dist/
-*.egg-info/
+# Large data files and uploads
+media/
+uploads/
+search_cache/
+models/
+model_cache/
+*.bin
+*.pkl
+*.safetensors
+*.faiss
 
-# Local development data (keep structure but not content)
-uploads/*
-!uploads/.gitkeep
-media/videos/*
-!media/videos/.gitkeep
-search_cache/*.bin
-search_cache/*.pkl
-!search_cache/.gitkeep
+# Video and audio files
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mkv
+*.mp3
+*.wav
+*.flac
 
-# Database (use environment-specific)
-*.sqlite3
+# Development database (use external DB in production)
+db.sqlite3
 *.db
 
-# Documentation build
-docs/_build/
+# Docker files (recursive)
+Dockerfile*
+docker-compose*
+.dockerignore
 
-# Node.js (if any frontend build tools)
+# CI/CD files
+.github/
+
+# Logs
+logs/
+*.log
+
+# Node modules (if any)
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log* 
+
+# Temporary files
+*.tmp
+*.temp
+*.bak 

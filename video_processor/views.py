@@ -1793,9 +1793,10 @@ def api_ai_status(request):
 @csrf_exempt
 def edit_transcript(request, job_id):
     """Allow users to edit transcript content."""
+    # Ensure user can only edit their own videos
+    job = get_object_or_404(VideoJob, job_id=job_id, user=request.user)
+    
     try:
-        # Ensure user can only edit their own videos
-        job = get_object_or_404(VideoJob, job_id=job_id, user=request.user)
         
         if request.method == 'GET':
             # Return current transcript for editing
@@ -1858,6 +1859,11 @@ def edit_transcript(request, job_id):
                 'message': 'Transcript updated successfully'
             })
             
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
     except Exception as e:
         logger.error(f"Error editing transcript for job {job_id}: {e}")
         return JsonResponse({

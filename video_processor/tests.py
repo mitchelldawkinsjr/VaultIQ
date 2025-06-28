@@ -30,6 +30,7 @@ class VaultIQPhase1Tests(TestCase):
         self.job1 = VideoJob.objects.create(
             user=self.user1,
             video_path='/test/video1.mp4',
+            video_name='Test Video 1.mp4',  # This is what gets displayed
             title='Test Video 1',
             status='completed',
             transcript='This is a test transcript for video 1.'
@@ -37,7 +38,8 @@ class VaultIQPhase1Tests(TestCase):
         
         self.job2 = VideoJob.objects.create(
             user=self.user2,
-            video_path='/test/video2.mp4', 
+            video_path='/test/video2.mp4',
+            video_name='Test Video 2.mp4',  # This is what gets displayed
             title='Test Video 2',
             status='completed',
             transcript='This is a test transcript for video 2.'
@@ -77,8 +79,8 @@ class VaultIQPhase1Tests(TestCase):
         # Access library - should only see user1's videos
         response = self.client.get(reverse('library'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Test Video 1')
-        self.assertNotContains(response, 'Test Video 2')
+        self.assertContains(response, 'Test Video 1.mp4')
+        self.assertNotContains(response, 'Test Video 2.mp4')
         
         # Try to access user2's video directly - should fail
         response = self.client.get(f'/edit-transcript/{self.job2.job_id}/')

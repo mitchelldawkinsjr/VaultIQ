@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('video_processor', '0002_auto_20250628_0140'),
+        ('video_processor', '0001_initial'),
     ]
 
     operations = [
