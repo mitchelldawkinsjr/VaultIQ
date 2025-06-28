@@ -1888,10 +1888,40 @@ def health_check(request):
         # Check database connectivity
         VideoJob.objects.count()
         
-        # Check if core services are available
+        # Check if core services are available (safely)
         search_engine_status = 'unavailable'
-        if search_engine is not None and hasattr(search_engine, 'is_available'):
-            search_engine_status = 'available' if search_engine.is_available else 'unavailable'
+        try:
+            # Check if search_engine is defined and available
+            if 'search_engine' in globals() and search_engine is not None and hasattr(search_engine, 'is_available'):
+                search_engine_status = 'available' if search_engine.is_available else 'unavailable'
+            else:
+                search_engine_status = 'not_initialized'
+        except NameError:
+            search_engine_status = 'not_defined'
+        
+        # Check Phase 2 AI availability (safely)
+        phase2_status = 'unavailable'
+        try:
+            if 'PHASE2_AI_AVAILABLE' in globals():
+                phase2_status = 'available' if PHASE2_AI_AVAILABLE else 'unavailable'
+        except NameError:
+            phase2_status = 'not_defined'
+        
+        # Check enhanced search (safely)
+        enhanced_search_status = 'unavailable'
+        try:
+            if 'enhanced_search' in globals() and enhanced_search is not None:
+                enhanced_search_status = 'available'
+        except NameError:
+            enhanced_search_status = 'not_defined'
+        
+        # Check RAG Q&A (safely)
+        rag_qa_status = 'unavailable'
+        try:
+            if 'rag_qa' in globals() and rag_qa is not None:
+                rag_qa_status = 'available'
+        except NameError:
+            rag_qa_status = 'not_defined'
         
         health_status = {
             'status': 'healthy',
@@ -1899,9 +1929,9 @@ def health_check(request):
             'database': 'connected',
             'search_engine': search_engine_status,
             'whisper': 'available',  # If we got here, imports worked
-            'phase2_ai': 'available' if PHASE2_AI_AVAILABLE else 'unavailable',
-            'enhanced_search': 'available' if enhanced_search is not None else 'unavailable',
-            'rag_qa': 'available' if rag_qa is not None else 'unavailable'
+            'phase2_ai': phase2_status,
+            'enhanced_search': enhanced_search_status,
+            'rag_qa': rag_qa_status
         }
         
         return JsonResponse(health_status)
