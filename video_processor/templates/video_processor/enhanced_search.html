@@ -230,11 +230,48 @@
         }
 
         .result-metadata {
-            display: flex;
-            gap: 15px;
             font-size: 0.9rem;
             color: #888;
             margin-top: 10px;
+        }
+        
+        .play-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .metadata-info {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .play-button {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+        
+        .play-button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+        
+        .play-button:active {
+            transform: translateY(0);
         }
 
         .timestamp-link {
@@ -354,6 +391,66 @@
             .search-options { grid-template-columns: 1fr; }
             .mode-buttons { justify-content: center; }
         }
+
+        /* Video lightbox styles */
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .video-modal {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 95vw;
+            max-height: 95vh;
+            overflow: auto;
+            position: relative;
+        }
+
+        .video-modal iframe,
+        .video-modal video {
+            max-width: 100%;
+        }
+
+        .timestamp-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .timestamp-link:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #5a67d8;
+        }
+
+        @media (max-width: 768px) {
+            .video-modal {
+                padding: 15px;
+                max-width: 98vw;
+                max-height: 98vh;
+            }
+            
+            .video-modal iframe,
+            .video-modal video {
+                width: 100% !important;
+                height: 450px !important;
+                min-height: 450px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -431,7 +528,7 @@
         </div>
 
         <div class="nav-links">
-            <a href="{% url 'search_interface' %}">← Basic Search</a>
+                            <a href="{% url 'private_search_interface' %}">← Basic Search</a>
             <a href="{% url 'library' %}">📚 Video Library</a>
             <a href="/admin/">⚙️ Admin</a>
         </div>
@@ -570,12 +667,18 @@
                         </div>
                         <div class="result-text">${result.text}</div>
                         <div class="result-metadata">
-                            <a href="/video/${result.video_id}/?t=${result.start_time}" 
-                               class="timestamp-link" target="_blank">
-                                ⏱️ ${result.timestamp_formatted || formatTime(result.start_time)}
-                            </a>
-                            <span>Duration: ${formatTime(result.end_time - result.start_time)}</span>
-                            ${result.semantic_similarity ? `<span>Similarity: ${Math.round(result.semantic_similarity * 100)}%</span>` : ''}
+                            <div class="play-controls">
+                                <button class="play-button" onclick="playSegment('${result.video_id}', ${result.start_time})" title="Play video at this timestamp">
+                                    ▶️ Play
+                                </button>
+                                <span class="timestamp-link" onclick="playSegment('${result.video_id}', ${result.start_time})">
+                                    ⏱️ ${result.timestamp_formatted || formatTime(result.start_time)}
+                                </span>
+                            </div>
+                            <div class="metadata-info">
+                                <span>Duration: ${formatTime(result.end_time - result.start_time)}</span>
+                                ${result.semantic_similarity ? `<span>Similarity: ${Math.round(result.semantic_similarity * 100)}%</span>` : ''}
+                            </div>
                         </div>
                         ${topicHtml ? `<div class="topic-tags">${topicHtml}</div>` : ''}
                     </div>
@@ -620,12 +723,19 @@
                         sourcesHtml = '<h4>Sources:</h4>';
                         data.sources.forEach(source => {
                             sourcesHtml += `
-                                <div style="margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px;">
-                                    <strong>${source.video_title}</strong> - 
-                                    <a href="/video/${source.video_id}/?t=${source.start_time}" target="_blank">
-                                        ${formatTime(source.start_time)}
-                                    </a>
-                                    <br><em>${source.text.substring(0, 200)}...</em>
+                                <div style="margin: 10px 0; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <strong>${source.video_title}</strong>
+                                        <div style="display: flex; gap: 10px; align-items: center;">
+                                            <button class="play-button" onclick="playSegment('${source.video_id}', ${source.start_time})" title="Play video at this timestamp">
+                                                ▶️ Play
+                                            </button>
+                                            <span class="timestamp-link" onclick="playSegment('${source.video_id}', ${source.start_time})" style="display: inline;">
+                                                ⏱️ ${formatTime(source.start_time)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <em>${source.text.substring(0, 200)}...</em>
                                 </div>
                             `;
                         });
@@ -671,6 +781,159 @@
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        async function playSegment(videoId, timestamp) {
+            // Create loading overlay first
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            `;
+            
+            overlay.innerHTML = `
+                <div style="background: white; border-radius: 15px; padding: 40px; text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 20px;">🔄</div>
+                    <p>Loading video player...</p>
+                </div>
+            `;
+            
+            overlay.className = 'video-overlay';
+            document.body.appendChild(overlay);
+            
+            try {
+                // Fetch video details
+                const response = await fetch(`/api/video/${videoId}/`);
+                const videoData = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(videoData.error || 'Failed to load video details');
+                }
+                
+                // Check if it's a YouTube video using the improved API response
+                const isYouTube = videoData.is_youtube;
+                
+                let playerHTML = '';
+                if (isYouTube) {
+                    // Use the YouTube video ID from the API
+                    const youtubeId = videoData.youtube_video_id;
+                    if (youtubeId) {
+                        playerHTML = `
+                            <iframe 
+                                width="800" 
+                                height="450" 
+                                src="https://www.youtube.com/embed/${youtubeId}?start=${Math.floor(timestamp)}&autoplay=1" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen
+                                style="border-radius: 8px;">
+                            </iframe>
+                            <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                                <span style="color: #e74c3c; font-weight: bold;">📺 YouTube Video</span> - 
+                                Starting at ${formatTime(timestamp)}
+                                <div style="margin-top: 8px;">
+                                    <a href="https://www.youtube.com/watch?v=${youtubeId}&t=${Math.floor(timestamp)}s" target="_blank" 
+                                       style="color: #3498db; text-decoration: none; font-size: 0.9rem;">
+                                        🔗 Open on YouTube
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // True fallback - very rare case where YouTube video ID cannot be extracted
+                        playerHTML = `
+                            <div style="background: #f8f9fa; padding: 40px; border-radius: 8px; text-align: center; border: 2px dashed #e74c3c;">
+                                <div style="font-size: 3rem; margin-bottom: 20px;">📺</div>
+                                <h3 style="color: #e74c3c; margin-bottom: 15px;">YouTube Video</h3>
+                                <p style="color: #7f8c8d; margin-bottom: 20px;">
+                                    This YouTube video's ID could not be extracted from the filename.<br>
+                                    The video file has been optimized and removed to save storage space.
+                                </p>
+                                <p style="color: #2c3e50; font-weight: bold;">
+                                    Segment starts at: ${formatTime(timestamp)}
+                                </p>
+                                <div style="margin-top: 20px; padding: 15px; background: #e8f4f8; border-radius: 8px;">
+                                    <p style="color: #34495e; margin: 0; font-size: 0.9rem;">
+                                        💡 <strong>Note:</strong> Search functionality is still available for this video's transcript.
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Local video file
+                    playerHTML = `
+                        <video 
+                            width="800" 
+                            height="450" 
+                            controls 
+                            autoplay
+                            style="border-radius: 8px;"
+                            onloadedmetadata="this.currentTime=${timestamp}">
+                            <source src="/video/${videoId}/" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                            <span style="color: #27ae60; font-weight: bold;">💾 Local Video</span> - 
+                            Starting at ${formatTime(timestamp)}
+                        </div>
+                    `;
+                }
+                
+                // Update overlay with video player
+                overlay.innerHTML = `
+                    <div class="video-modal">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="margin: 0; color: #2c3e50;">🎬 ${videoData.video_name}</h3>
+                            <button onclick="closeVideoPlayer()" style="background: #e74c3c; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 1.2rem; font-weight: bold;">×</button>
+                        </div>
+                        <div style="text-align: center;">
+                            ${playerHTML}
+                        </div>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <button onclick="closeVideoPlayer()" style="background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;">
+                                Close Player
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading video:', error);
+                overlay.innerHTML = `
+                    <div style="background: white; border-radius: 15px; padding: 40px; text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 20px; color: #e74c3c;">❌</div>
+                        <h3 style="color: #e74c3c; margin-bottom: 15px;">Error Loading Video</h3>
+                        <p style="color: #7f8c8d; margin-bottom: 20px;">${error.message}</p>
+                        <button onclick="closeVideoPlayer()" style="background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;">
+                            Close
+                        </button>
+                    </div>
+                `;
+            }
+            
+            // Close on background click
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    closeVideoPlayer();
+                }
+            });
+        }
+        
+        function closeVideoPlayer() {
+            const overlay = document.querySelector('.video-overlay');
+            if (overlay) {
+                overlay.remove();
+            }
         }
 
         function getCookie(name) {

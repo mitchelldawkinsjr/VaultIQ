@@ -140,3 +140,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+
+# Authentication settings
+LOGIN_REDIRECT_URL = '/my-videos/'  # Redirect to private search interface after login
+LOGOUT_REDIRECT_URL = '/'  # Redirect to public search after logout

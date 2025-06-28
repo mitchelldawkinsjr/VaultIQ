@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Not Found - VaultIQ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            margin: 2rem;
+        }
+
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+
+        h1 {
+            color: #e74c3c;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .username {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-family: monospace;
+            font-size: 1.1rem;
+            color: #e74c3c;
+            margin: 1rem 0;
+            border: 2px solid #ffe6e6;
+        }
+
+        .message {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #666;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .suggestions {
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .suggestions h3 {
+            color: #495057;
+            margin-bottom: 1rem;
+        }
+
+        .suggestions ul {
+            list-style: none;
+            color: #666;
+        }
+
+        .suggestions li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .suggestions li:last-child {
+            border-bottom: none;
+        }
+
+        .suggestions li::before {
+            content: "💡";
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">👤❌</div>
+        
+        <h1>User Not Found</h1>
+        
+        <div class="username">{{ username }}</div>
+        
+        <div class="message">
+            The user "<strong>{{ username }}</strong>" does not exist in our system. 
+            This could be because the username was typed incorrectly or the user hasn't created an account yet.
+        </div>
+
+        <div class="actions">
+            <a href="{% url 'public_search' %}" class="btn btn-primary">
+                🔍 Search All Videos
+            </a>
+            <a href="{% url 'register' %}" class="btn btn-secondary">
+                📝 Create Account
+            </a>
+        </div>
+
+        <div class="suggestions">
+            <h3>What you can do:</h3>
+            <ul>
+                <li>Check the spelling of the username</li>
+                <li>Search all public videos using the main search</li>
+                <li>Create a VaultIQ account to build your own video library</li>
+                <li>Ask the user to share the correct link to their videos</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 

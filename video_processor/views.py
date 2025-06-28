@@ -31,7 +31,13 @@ from django.urls import reverse_lazy
 
 from .models import VideoJob, JobStatus, VideoSearchQuery
 from core_video_processor import CoreVideoProcessor
-from semantic_search import search_engine
+
+# Import semantic search engine (the initialized instance)
+try:
+    from semantic_search import search_engine, SemanticSearchEngine
+except ImportError:
+    search_engine = None
+    SemanticSearchEngine = None
 
 # Import AI enhancement system
 try:
@@ -41,14 +47,6 @@ try:
 except ImportError:
     AI_AVAILABLE = False
     logger = None
-
-# Import semantic search
-try:
-    from semantic_search import SemanticSearchEngine
-    search_engine = None  # Will be initialized when needed
-except ImportError:
-    SemanticSearchEngine = None
-    search_engine = None
 
 # Phase 2: Import enhanced AI components
 try:
@@ -1158,6 +1156,11 @@ def clean_search_interface(request):
     return render(request, 'video_processor/search_interface.html')
 
 
+def public_enhanced_search_interface(request):
+    """Public enhanced search interface with Phase 2 AI capabilities - no authentication required."""
+    return render(request, 'video_processor/public_enhanced_search.html')
+
+
 def library_interface(request):
     """Legacy library interface with full admin functionality."""
     # Calculate statistics
@@ -1265,23 +1268,18 @@ def api_clean_search(request):
         # Perform search based on mode
         if search_mode == 'keyword':
             results = convert_keyword_results_to_api_format(perform_keyword_search(query))
-        elif search_mode == 'semantic':
+        elif search_mode == 'semantic' and search_engine and search_engine.is_initialized:
             semantic_results = search_engine.semantic_search(query, top_k=20)
             results = convert_semantic_results_to_api_format(semantic_results)
-            # If semantic search failed, fall back to keyword search
-            if not results and search_engine.is_initialized == False:
-                logger.info("Semantic search not available, falling back to keyword search")
-                results = convert_keyword_results_to_api_format(perform_keyword_search(query))
-                search_mode = 'keyword'
-        else:  # hybrid
+        elif search_mode == 'hybrid' and search_engine and search_engine.is_initialized:
             video_segments_data = get_video_segments_for_search()
             semantic_results = search_engine.hybrid_search(query, video_segments_data, top_k=20)
             results = convert_semantic_results_to_api_format(semantic_results)
-            # If hybrid search failed, fall back to keyword search
-            if not results and search_engine.is_initialized == False:
-                logger.info("Hybrid search not available, falling back to keyword search")
-                results = convert_keyword_results_to_api_format(perform_keyword_search(query))
-                search_mode = 'keyword'
+        else:
+            # Fall back to keyword search if semantic/hybrid not available
+            logger.info(f"Search engine not available (engine: {search_engine}, mode: {search_mode}), falling back to keyword search")
+            results = convert_keyword_results_to_api_format(perform_keyword_search(query))
+            search_mode = 'keyword'
         
         # Save search query
         VideoSearchQuery.objects.create(
@@ -1301,6 +1299,153 @@ def api_clean_search(request):
         return JsonResponse({'error': 'Invalid JSON data'}, status=400)
     except Exception as e:
         logger.error(f"Error in clean search API: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def api_public_enhanced_search(request):
+    """Public enhanced search API - searches across all videos without authentication."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        query = data.get('query', '').strip()
+        
+        if not query:
+            return JsonResponse({'error': 'Search query is required'}, status=400)
+        
+        logger.info(f"Public enhanced search: '{query}'")
+        
+        # Check if Phase 2 enhanced search is available
+        if PHASE2_AI_AVAILABLE and enhanced_search:
+            try:
+                # Use enhanced search engine
+                results = enhanced_search.search(query, k=20)
+                
+                # Convert to API format
+                api_results = []
+                for result in results:
+                    api_results.append({
+                        'video_id': result.video_id,
+                        'title': result.video_title,
+                        'content': result.segment_text,
+                        'timestamp': result.start_time,
+                        'confidence_score': result.confidence_score,
+                        'topic': result.topic_tags,
+                        'enhanced': True
+                    })
+                
+                return JsonResponse({
+                    'results': api_results,
+                    'count': len(api_results),
+                    'query': query,
+                    'enhanced': True,
+                    'message': f'Found {len(api_results)} enhanced results for "{query}"'
+                })
+                
+            except Exception as e:
+                logger.error(f"Enhanced search error: {e}")
+                # Fall back to regular search
+        
+        # Fall back to regular semantic search
+        if search_engine and search_engine.is_initialized:
+            semantic_results = search_engine.semantic_search(query, top_k=20)
+            results = convert_semantic_results_to_api_format(semantic_results)
+        else:
+            # Fall back to keyword search
+            logger.info(f"Search engine not available for public search, falling back to keyword search")
+            results = convert_keyword_results_to_api_format(perform_keyword_search(query))
+        
+        # Save search query
+        VideoSearchQuery.objects.create(query=query, results_count=len(results))
+        
+        return JsonResponse({
+            'results': results,
+            'count': len(results),
+            'query': query,
+            'enhanced': False,
+            'message': f'Found {len(results)} results for "{query}"'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.error(f"Error in public enhanced search API: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def api_public_rag_question_answer(request):
+    """Public RAG-based Q&A API - answers questions using all video content without authentication."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        question = data.get('question', '').strip()
+        
+        if not question:
+            return JsonResponse({'error': 'Question is required'}, status=400)
+        
+        logger.info(f"Public RAG Q&A: '{question}'")
+        
+        # Check if RAG system is available
+        if PHASE2_AI_AVAILABLE and rag_qa:
+            try:
+                # Use RAG Q&A system
+                result = rag_qa.answer_question(question)
+                
+                return JsonResponse({
+                    'question': question,
+                    'answer': result.answer,
+                    'confidence': result.confidence,
+                    'sources': [
+                        {
+                            'video_id': source.video_id,
+                            'title': source.title,
+                            'content': source.content,
+                            'timestamp': source.timestamp,
+                            'relevance_score': source.relevance_score
+                        }
+                        for source in result.sources
+                    ],
+                    'method': result.method,
+                    'enhanced': True
+                })
+                
+            except Exception as e:
+                logger.error(f"RAG Q&A error: {e}")
+                # Fall back to simple search
+        
+        # Fall back to simple search-based answer
+        if search_engine and search_engine.is_initialized:
+            search_results = search_engine.semantic_search(question, top_k=5)
+            api_results = convert_semantic_results_to_api_format(search_results)
+        else:
+            logger.info(f"Search engine not available for Q&A, falling back to keyword search")
+            api_results = convert_keyword_results_to_api_format(perform_keyword_search(question))
+        
+        # Create a simple answer from search results
+        answer = "Based on the available video content, here are the most relevant segments:"
+        if api_results:
+            answer += f" Found {len(api_results)} relevant segments."
+        else:
+            answer = "I couldn't find relevant information to answer your question."
+        
+        return JsonResponse({
+            'question': question,
+            'answer': answer,
+            'confidence': 0.5 if api_results else 0.1,
+            'sources': api_results[:3],  # Top 3 sources
+            'method': 'search_fallback',
+            'enhanced': False
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.error(f"Error in public RAG Q&A API: {e}")
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -2042,3 +2187,427 @@ def enhanced_search_interface(request):
         'enhanced_search_ready': enhanced_search.is_initialized if enhanced_search else False,
         'user': request.user
     })
+
+
+# PUBLIC USER-SPECIFIC SEARCH VIEWS
+# These allow public access to search a specific user's video library
+
+def public_user_search_interface(request, username):
+    """Public search interface for a specific user's video library."""
+    from django.contrib.auth.models import User
+    from django.shortcuts import get_object_or_404
+    
+    # Check if user exists
+    try:
+        target_user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return render(request, 'video_processor/user_not_found.html', {
+            'username': username
+        }, status=404)
+    
+    # Get user's video count for display
+    video_count = VideoJob.objects.filter(
+        user=target_user,
+        status=JobStatus.COMPLETED
+    ).count()
+    
+    return render(request, 'video_processor/public_user_search.html', {
+        'target_user': target_user,
+        'username': username,
+        'video_count': video_count,
+        'search_mode': 'basic'
+    })
+
+
+def public_user_enhanced_search_interface(request, username):
+    """Public enhanced search interface for a specific user's video library."""
+    from django.contrib.auth.models import User
+    from django.shortcuts import get_object_or_404
+    
+    # Check if user exists
+    try:
+        target_user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return render(request, 'video_processor/user_not_found.html', {
+            'username': username
+        }, status=404)
+    
+    # Get user's video count for display
+    video_count = VideoJob.objects.filter(
+        user=target_user,
+        status=JobStatus.COMPLETED
+    ).count()
+    
+    return render(request, 'video_processor/public_user_enhanced_search.html', {
+        'target_user': target_user,
+        'username': username,
+        'video_count': video_count,
+        'search_mode': 'enhanced',
+        'phase2_available': PHASE2_AI_AVAILABLE,
+        'enhanced_search_ready': enhanced_search.is_initialized if enhanced_search else False
+    })
+
+
+# PUBLIC USER-SPECIFIC SEARCH APIs
+
+@csrf_exempt
+def api_public_user_search(request, username):
+    """Public search API for a specific user's video library - basic search."""
+    from django.contrib.auth.models import User
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        # Check if user exists
+        try:
+            target_user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return JsonResponse({'error': f'User "{username}" not found'}, status=404)
+        
+        data = json.loads(request.body)
+        query = data.get('query', '').strip()
+        
+        if not query:
+            return JsonResponse({'error': 'Search query is required'}, status=400)
+        
+        logger.info(f"Public user search: '{query}' for user '{username}'")
+        
+        # Get user's videos for search
+        user_videos = VideoJob.objects.filter(
+            user=target_user,
+            status=JobStatus.COMPLETED
+        )
+        
+        if not user_videos.exists():
+            return JsonResponse({
+                'results': [],
+                'count': 0,
+                'query': query,
+                'username': username,
+                'message': f'No videos found for user "{username}"'
+            })
+        
+        # Use semantic search if available, otherwise fall back to keyword search
+        if search_engine and search_engine.is_initialized:
+            # Create user-specific segments for search
+            user_segments = []
+            for video in user_videos:
+                if video.transcription and 'text_segments' in video.transcription:
+                    for segment in video.transcription['text_segments']:
+                        user_segments.append({
+                            'text': segment.get('text', ''),
+                            'video_id': str(video.job_id),
+                            'video_title': video.video_name,
+                            'start_time': segment.get('start', 0),
+                            'end_time': segment.get('end', 0),
+                            'user': target_user.username
+                        })
+            
+            # Perform hybrid search on user's content
+            if user_segments:
+                hybrid_results = search_engine.hybrid_search(query, user_segments, top_k=20)
+                results = convert_semantic_results_to_api_format(hybrid_results)
+            else:
+                results = []
+        else:
+            # Fall back to keyword search in user's content
+            results = perform_user_keyword_search(query, target_user)
+        
+        return JsonResponse({
+            'results': results,
+            'count': len(results),
+            'query': query,
+            'username': username,
+            'enhanced': False,
+            'message': f'Found {len(results)} results in {target_user.username}\'s videos'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.error(f"Error in public user search API: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def api_public_user_enhanced_search(request, username):
+    """Public enhanced search API for a specific user's video library."""
+    from django.contrib.auth.models import User
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        # Check if user exists
+        try:
+            target_user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return JsonResponse({'error': f'User "{username}" not found'}, status=404)
+        
+        data = json.loads(request.body)
+        query = data.get('query', '').strip()
+        
+        if not query:
+            return JsonResponse({'error': 'Search query is required'}, status=400)
+        
+        logger.info(f"Public user enhanced search: '{query}' for user '{username}'")
+        
+        # Get user's videos
+        user_videos = VideoJob.objects.filter(
+            user=target_user,
+            status=JobStatus.COMPLETED
+        )
+        
+        if not user_videos.exists():
+            return JsonResponse({
+                'results': [],
+                'count': 0,
+                'query': query,
+                'username': username,
+                'enhanced': False,
+                'message': f'No videos found for user "{username}"'
+            })
+        
+        # Check if Phase 2 enhanced search is available
+        if PHASE2_AI_AVAILABLE and enhanced_search:
+            try:
+                # Build user-specific segments for enhanced search
+                user_segments = []
+                for video in user_videos:
+                    if video.transcription and 'text_segments' in video.transcription:
+                        for segment in video.transcription['text_segments']:
+                            user_segments.append({
+                                'text': segment.get('text', ''),
+                                'video_id': str(video.job_id),
+                                'video_title': video.video_name,
+                                'start_time': segment.get('start', 0),
+                                'end_time': segment.get('end', 0)
+                            })
+                
+                if user_segments:
+                    # Temporarily build index for this user's content
+                    enhanced_search.build_enhanced_index(user_segments)
+                    results = enhanced_search.search(query, k=20)
+                    
+                    # Convert to API format
+                    api_results = []
+                    for result in results:
+                        api_results.append({
+                            'video_id': result.video_id,
+                            'title': result.video_title,
+                            'content': result.segment_text,
+                            'timestamp': result.start_time,
+                            'confidence_score': result.confidence_score,
+                            'topic': result.topic_tags,
+                            'enhanced': True
+                        })
+                    
+                    return JsonResponse({
+                        'results': api_results,
+                        'count': len(api_results),
+                        'query': query,
+                        'username': username,
+                        'enhanced': True,
+                        'message': f'Found {len(api_results)} enhanced results in {target_user.username}\'s videos'
+                    })
+                
+            except Exception as e:
+                logger.error(f"Enhanced search error for user {username}: {e}")
+                # Fall back to regular search
+        
+        # Fall back to regular search
+        if search_engine and search_engine.is_initialized:
+            user_segments = []
+            for video in user_videos:
+                if video.transcription and 'text_segments' in video.transcription:
+                    for segment in video.transcription['text_segments']:
+                        user_segments.append({
+                            'text': segment.get('text', ''),
+                            'video_id': str(video.job_id),
+                            'video_title': video.video_name,
+                            'start_time': segment.get('start', 0),
+                            'end_time': segment.get('end', 0)
+                        })
+            
+            if user_segments:
+                semantic_results = search_engine.hybrid_search(query, user_segments, top_k=20)
+                results = convert_semantic_results_to_api_format(semantic_results)
+            else:
+                results = []
+        else:
+            # Fall back to keyword search
+            results = perform_user_keyword_search(query, target_user)
+        
+        return JsonResponse({
+            'results': results,
+            'count': len(results),
+            'query': query,
+            'username': username,
+            'enhanced': False,
+            'message': f'Found {len(results)} results in {target_user.username}\'s videos'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.error(f"Error in public user enhanced search API: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def api_public_user_rag_qa(request, username):
+    """Public RAG-based Q&A API for a specific user's video library."""
+    from django.contrib.auth.models import User
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        # Check if user exists
+        try:
+            target_user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return JsonResponse({'error': f'User "{username}" not found'}, status=404)
+        
+        data = json.loads(request.body)
+        question = data.get('question', '').strip()
+        
+        if not question:
+            return JsonResponse({'error': 'Question is required'}, status=400)
+        
+        logger.info(f"Public user RAG Q&A: '{question}' for user '{username}'")
+        
+        # Get user's videos
+        user_videos = VideoJob.objects.filter(
+            user=target_user,
+            status=JobStatus.COMPLETED
+        )
+        
+        if not user_videos.exists():
+            return JsonResponse({
+                'question': question,
+                'answer': f"No videos found for user '{username}' to answer questions about.",
+                'confidence': 0.0,
+                'sources': [],
+                'method': 'no_content',
+                'username': username,
+                'enhanced': False
+            })
+        
+        # Check if RAG system is available
+        if PHASE2_AI_AVAILABLE and rag_qa:
+            try:
+                # Build user-specific segments for RAG
+                user_segments = []
+                for video in user_videos:
+                    if video.transcription and 'text_segments' in video.transcription:
+                        for segment in video.transcription['text_segments']:
+                            user_segments.append({
+                                'text': segment.get('text', ''),
+                                'video_id': str(video.job_id),
+                                'video_title': video.video_name,
+                                'start_time': segment.get('start', 0),
+                                'end_time': segment.get('end', 0)
+                            })
+                
+                if user_segments:
+                    # Temporarily build index for this user's content
+                    enhanced_search.build_enhanced_index(user_segments)
+                    result = rag_qa.answer_question(question)
+                    
+                    return JsonResponse({
+                        'question': question,
+                        'answer': result.answer,
+                        'confidence': result.confidence,
+                        'sources': [
+                            {
+                                'video_id': source.video_id,
+                                'title': source.video_title,
+                                'content': source.segment_text,
+                                'timestamp': source.start_time,
+                                'relevance_score': source.confidence_score
+                            }
+                            for source in result.sources
+                        ],
+                        'method': result.method,
+                        'username': username,
+                        'enhanced': True
+                    })
+                
+            except Exception as e:
+                logger.error(f"RAG Q&A error for user {username}: {e}")
+                # Fall back to simple search
+        
+        # Fall back to simple search-based answer
+        user_segments = []
+        for video in user_videos:
+            if video.transcription and 'text_segments' in video.transcription:
+                for segment in video.transcription['text_segments']:
+                    user_segments.append({
+                        'text': segment.get('text', ''),
+                        'video_id': str(video.job_id),
+                        'video_title': video.video_name,
+                        'start_time': segment.get('start', 0),
+                        'end_time': segment.get('end', 0)
+                    })
+        
+        if search_engine and search_engine.is_initialized and user_segments:
+            search_results = search_engine.hybrid_search(question, user_segments, top_k=5)
+            api_results = convert_semantic_results_to_api_format(search_results)
+        else:
+            api_results = perform_user_keyword_search(question, target_user)[:5]
+        
+        # Create a simple answer from search results
+        answer = f"Based on {target_user.username}'s video content, here are the most relevant segments:"
+        if api_results:
+            answer += f" Found {len(api_results)} relevant segments."
+        else:
+            answer = f"I couldn't find relevant information in {target_user.username}'s videos to answer your question."
+        
+        return JsonResponse({
+            'question': question,
+            'answer': answer,
+            'confidence': 0.5 if api_results else 0.1,
+            'sources': api_results[:3],  # Top 3 sources
+            'method': 'search_fallback',
+            'username': username,
+            'enhanced': False
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.error(f"Error in public user RAG Q&A API: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+# HELPER FUNCTION FOR USER-SPECIFIC KEYWORD SEARCH
+
+def perform_user_keyword_search(query, target_user):
+    """Perform keyword search in a specific user's video library."""
+    results = []
+    user_videos = VideoJob.objects.filter(
+        user=target_user,
+        status=JobStatus.COMPLETED
+    )
+    
+    query_lower = query.lower()
+    
+    for video in user_videos:
+        if video.transcription and 'text_segments' in video.transcription:
+            for segment in video.transcription['text_segments']:
+                text = segment.get('text', '').lower()
+                if query_lower in text:
+                    results.append({
+                        'video_id': str(video.job_id),
+                        'title': video.video_name,
+                        'content': segment.get('text', ''),
+                        'timestamp': segment.get('start', 0),
+                        'relevance_score': 0.8,  # Basic relevance score for keyword match
+                        'search_type': 'keyword'
+                    })
+    
+    # Sort by relevance (for now, just by timestamp)
+    results.sort(key=lambda x: x['relevance_score'], reverse=True)
+    return results[:20]  # Limit to top 20 results

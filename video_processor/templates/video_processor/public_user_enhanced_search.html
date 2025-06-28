@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ target_user.username }}'s AI Search - VaultIQ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --light-bg: #ecf0f1;
+            --dark-text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark-text);
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+
+        .header .subtitle {
+            opacity: 0.9;
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .user-info {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: inline-block;
+        }
+
+        .user-info .username {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .user-info .video-count {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .ai-badge {
+            background: linear-gradient(45deg, #6c5ce7, #a29bfe);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-left: 1rem;
+        }
+
+        .nav-links {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .search-container {
+            padding: 3rem;
+        }
+
+        .search-section, .qa-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .search-input-group {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-input, .qa-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus, .qa-input:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .search-btn, .qa-btn {
+            background: linear-gradient(45deg, var(--secondary-color), #5dade2);
+            border: none;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .search-btn:hover, .qa-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-right: 0.5rem;
+            color: var(--secondary-color);
+        }
+
+        .results-container {
+            margin-top: 2rem;
+        }
+
+        .result-item {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid var(--secondary-color);
+            transition: all 0.3s ease;
+        }
+
+        .result-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .result-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .result-content {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 0.8rem;
+        }
+
+        .result-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .play-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .play-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .play-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .timestamp-link {
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .timestamp-link:hover {
+            color: var(--primary-color);
+        }
+
+        .confidence-score {
+            background: var(--success-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        .enhanced-badge {
+            background: linear-gradient(45deg, #6c5ce7, #a29bfe);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .qa-answer {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .qa-answer-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--dark-text);
+            margin-bottom: 1rem;
+        }
+
+        .qa-sources {
+            margin-top: 1rem;
+        }
+
+        .qa-sources h4 {
+            font-size: 1rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .no-results i {
+            font-size: 3rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-enhanced {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .status-basic {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .search-container {
+                padding: 1.5rem;
+            }
+            
+            .header {
+                padding: 1.5rem;
+            }
+            
+            .nav-links {
+                position: static;
+                margin-top: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <div class="nav-links">
+                <a href="{% url 'public_search' %}">🌍 All Videos</a>
+                <a href="{% url 'public_user_search' username %}">📊 Basic Search</a>
+                <a href="{% url 'register' %}">📝 Sign Up</a>
+            </div>
+            
+            <h1>{{ target_user.username }}'s AI Search <span class="ai-badge">🤖 AI Enhanced</span></h1>
+            <div class="subtitle">Advanced semantic search and Q&A for {{ target_user.username }}'s video library</div>
+            
+            <div class="user-info">
+                <div class="username">👤 {{ target_user.username }}</div>
+                <div class="video-count">📹 {{ video_count }} video{{ video_count|pluralize }} • AI-Powered Search</div>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <!-- AI Status Indicator -->
+            <div class="status-indicator {% if phase2_available and enhanced_search_ready %}status-enhanced{% else %}status-basic{% endif %}">
+                {% if phase2_available and enhanced_search_ready %}
+                    <i class="fas fa-robot"></i> AI Enhanced Search Active
+                {% else %}
+                    <i class="fas fa-search"></i> Basic Search Mode
+                {% endif %}
+            </div>
+
+            <!-- Enhanced Search Section -->
+            <div class="search-section">
+                <div class="section-title">
+                    <i class="fas fa-brain"></i>
+                    AI-Powered Search in {{ target_user.username }}'s Videos
+                </div>
+                
+                <div class="search-input-group">
+                    <input type="text" id="searchInput" class="search-input" 
+                           placeholder="Ask anything about {{ target_user.username }}'s video content..." 
+                           autocomplete="off">
+                    <button id="searchBtn" class="search-btn">
+                        <i class="fas fa-brain"></i> AI Search
+                    </button>
+                </div>
+                
+                <div id="searchResults" class="results-container"></div>
+            </div>
+
+            <!-- Q&A Section -->
+            <div class="qa-section">
+                <div class="section-title">
+                    <i class="fas fa-question-circle"></i>
+                    Ask Questions About {{ target_user.username }}'s Content
+                </div>
+                
+                <div class="search-input-group">
+                    <input type="text" id="qaInput" class="qa-input" 
+                           placeholder="Ask a question about {{ target_user.username }}'s videos..." 
+                           autocomplete="off">
+                    <button id="qaBtn" class="qa-btn">
+                        <i class="fas fa-magic"></i> Get Answer
+                    </button>
+                </div>
+                
+                <div id="qaResults" class="results-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let searchTimeout, qaTimeout;
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchResults = document.getElementById('searchResults');
+        const qaInput = document.getElementById('qaInput');
+        const qaBtn = document.getElementById('qaBtn');
+        const qaResults = document.getElementById('qaResults');
+        const username = '{{ username }}';
+
+        // Enhanced search function
+        async function performEnhancedSearch(query) {
+            if (!query.trim()) {
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            searchResults.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> AI is analyzing...</div>';
+
+            try {
+                const response = await fetch(`/api/search/${username}/enhanced/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    searchResults.innerHTML = `<div class="no-results"><i class="fas fa-exclamation-triangle"></i><h3>Error</h3><p>${data.error}</p></div>`;
+                    return;
+                }
+
+                displaySearchResults(data);
+            } catch (error) {
+                console.error('Enhanced search error:', error);
+                searchResults.innerHTML = '<div class="no-results"><i class="fas fa-exclamation-triangle"></i><h3>Search Error</h3><p>Unable to perform AI search. Please try again.</p></div>';
+            }
+        }
+
+        // Q&A function
+        async function performQA(question) {
+            if (!question.trim()) {
+                qaResults.innerHTML = '';
+                return;
+            }
+
+            qaResults.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> AI is thinking...</div>';
+
+            try {
+                const response = await fetch(`/api/search/${username}/rag-qa/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: question })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    qaResults.innerHTML = `<div class="no-results"><i class="fas fa-exclamation-triangle"></i><h3>Error</h3><p>${data.error}</p></div>`;
+                    return;
+                }
+
+                displayQAResults(data);
+            } catch (error) {
+                console.error('Q&A error:', error);
+                qaResults.innerHTML = '<div class="no-results"><i class="fas fa-exclamation-triangle"></i><h3>Q&A Error</h3><p>Unable to process question. Please try again.</p></div>';
+            }
+        }
+
+        // Display search results
+        function displaySearchResults(data) {
+            if (!data.results || data.results.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-brain"></i>
+                        <h3>No Results Found</h3>
+                        <p>AI couldn't find relevant content in ${username}'s videos for "${data.query}"</p>
+                        <p>Try rephrasing your search or asking a different question.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let resultsHtml = `<h3>AI found ${data.count} result${data.count !== 1 ? 's' : ''} in ${username}'s videos:</h3>`;
+            
+            data.results.forEach(result => {
+                const timeFormatted = formatTime(result.timestamp);
+                const confidence = Math.round((result.confidence_score || 0.5) * 100);
+                const isEnhanced = data.enhanced || result.enhanced;
+                
+                resultsHtml += `
+                    <div class="result-item">
+                        <div class="result-title">
+                            ${result.title}
+                            ${isEnhanced ? '<span class="enhanced-badge">🤖 AI Enhanced</span>' : ''}
+                        </div>
+                        <div class="result-content">${result.content}</div>
+                        <div class="result-meta">
+                            <div class="play-controls">
+                                <button class="play-btn" onclick="playSegment('${result.video_id}', ${result.timestamp})">
+                                    <i class="fas fa-play"></i> Play
+                                </button>
+                                <a href="#" class="timestamp-link" onclick="playSegment('${result.video_id}', ${result.timestamp}); return false;">
+                                    🕒 ${timeFormatted}
+                                </a>
+                            </div>
+                            <span class="confidence-score">${confidence}% relevance</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            searchResults.innerHTML = resultsHtml;
+        }
+
+        // Display Q&A results
+        function displayQAResults(data) {
+            let qaHtml = `
+                <div class="qa-answer">
+                    <h3><i class="fas fa-robot"></i> AI Answer:</h3>
+                    <div class="qa-answer-text">${data.answer}</div>
+                    <div style="font-size: 0.9rem; color: #666;">
+                        <strong>Confidence:</strong> ${Math.round((data.confidence || 0.5) * 100)}% • 
+                        <strong>Method:</strong> ${data.method || 'AI Analysis'}
+                        ${data.enhanced ? ' • <span class="enhanced-badge">🤖 Enhanced</span>' : ''}
+                    </div>
+            `;
+
+            if (data.sources && data.sources.length > 0) {
+                qaHtml += `
+                    <div class="qa-sources">
+                        <h4>📚 Sources from ${username}'s videos:</h4>
+                `;
+                
+                data.sources.forEach(source => {
+                    const timeFormatted = formatTime(source.timestamp);
+                    qaHtml += `
+                        <div class="result-item" style="margin: 0.5rem 0; padding: 1rem;">
+                            <div class="result-title">${source.title}</div>
+                            <div class="result-content">${source.content}</div>
+                            <div class="result-meta">
+                                <div class="play-controls">
+                                    <button class="play-btn" onclick="playSegment('${source.video_id}', ${source.timestamp})">
+                                        <i class="fas fa-play"></i> Play
+                                    </button>
+                                    <a href="#" class="timestamp-link" onclick="playSegment('${source.video_id}', ${source.timestamp}); return false;">
+                                        🕒 ${timeFormatted}
+                                    </a>
+                                </div>
+                                <span class="confidence-score">${Math.round((source.relevance_score || 0.5) * 100)}% relevant</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                qaHtml += '</div>';
+            }
+
+            qaHtml += '</div>';
+            qaResults.innerHTML = qaHtml;
+        }
+
+        // Format time helper
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Play segment function
+        function playSegment(videoId, timestamp) {
+            const videoUrl = `/api/video/${videoId}/`;
+            const lightboxHtml = `
+                <div id="videoLightbox" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+                    <div style="position: relative; width: 90%; max-width: 800px;">
+                        <video controls autoplay style="width: 100%; border-radius: 10px;" id="lightboxVideo">
+                            <source src="${videoUrl}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <button onclick="closeLightbox()" style="position: absolute; top: -40px; right: 0; background: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px;">×</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', lightboxHtml);
+            
+            const video = document.getElementById('lightboxVideo');
+            video.addEventListener('loadedmetadata', function() {
+                video.currentTime = timestamp;
+            });
+        }
+
+        // Close lightbox function
+        function closeLightbox() {
+            const lightbox = document.getElementById('videoLightbox');
+            if (lightbox) {
+                lightbox.remove();
+            }
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performEnhancedSearch(this.value);
+            }, 800);
+        });
+
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                clearTimeout(searchTimeout);
+                performEnhancedSearch(this.value);
+            }
+        });
+
+        searchBtn.addEventListener('click', function() {
+            performEnhancedSearch(searchInput.value);
+        });
+
+        qaInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performQA(this.value);
+            }
+        });
+
+        qaBtn.addEventListener('click', function() {
+            performQA(qaInput.value);
+        });
+
+        // Close lightbox on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLightbox();
+            }
+        });
+
+        // Close lightbox on background click
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'videoLightbox') {
+                closeLightbox();
+            }
+        });
+    </script>
+</body>
+</html> 
