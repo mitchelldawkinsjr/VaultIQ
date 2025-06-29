@@ -80,7 +80,7 @@ def register_view(request):
     if request.method == "POST":
         form = UserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            form.save()
             username = form.cleaned_data.get("username")
             messages.success(request, f"Account created for {username}! Please log in.")
             return redirect("login")
@@ -362,7 +362,6 @@ def upload_video(request):
         import uuid
 
         unique_id = uuid.uuid4()
-        file_extension = Path(video_file.name).suffix
         safe_filename = f"{unique_id}_{video_file.name}"
         file_path = media_videos_dir / safe_filename
 

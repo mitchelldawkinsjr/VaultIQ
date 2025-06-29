@@ -231,14 +231,14 @@ def main():
 
     print("\nDependency Status:")
     try:
-        import cv2
+        import cv2  # noqa: F401
 
         print("✓ OpenCV: Available")
     except ImportError:
         print("✗ OpenCV: Not available (pip install opencv-python)")
 
     try:
-        import whisper
+        import whisper  # noqa: F401
 
         print("✓ Whisper: Available")
     except ImportError:

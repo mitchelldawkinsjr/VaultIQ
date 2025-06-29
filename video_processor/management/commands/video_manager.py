@@ -1,5 +1,3 @@
-import argparse
-import threading
 import time
 from pathlib import Path
 
@@ -55,13 +53,13 @@ class Command(BaseCommand):
         delete_parser.add_argument("job_id", help="Job ID to delete")
 
         # Stats command
-        stats_parser = subparsers.add_parser("stats", help="Show processing statistics")
+        stats_parser = subparsers.add_parser("stats", help="Show processing statistics")  # noqa: F841
 
         # Semantic search commands
-        rebuild_index_parser = subparsers.add_parser(
+        rebuild_index_parser = subparsers.add_parser(  # noqa: F841
             "rebuild-index", help="Rebuild semantic search index"
         )
-        search_stats_parser = subparsers.add_parser(
+        search_stats_parser = subparsers.add_parser(  # noqa: F841
             "search-stats", help="Show search engine statistics"
         )
         ai_search_parser = subparsers.add_parser(
@@ -86,7 +84,7 @@ class Command(BaseCommand):
         )
 
         # AI Enhancement commands
-        ai_status_parser = subparsers.add_parser(
+        ai_status_parser = subparsers.add_parser(  # noqa: F841
             "ai-status", help="Check AI system status and configuration"
         )
 
@@ -177,11 +175,11 @@ class Command(BaseCommand):
                 "failed": "❌",
             }.get(job.status, "❓")
 
-            self.stdout.write("\n{status_emoji} {job.video_name}")
-            self.stdout.write("   ID: {job.job_id}")
-            self.stdout.write("   Status: {job.status}")
+            self.stdout.write(f"\n{status_emoji} {job.video_name}")
+            self.stdout.write(f"   ID: {job.job_id}")
+            self.stdout.write(f"   Status: {job.status}")
             self.stdout.write(
-                "   Created: {job.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+                f"   Created: {job.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
             )
 
             if job.status == JobStatus.COMPLETED:
@@ -341,19 +339,19 @@ class Command(BaseCommand):
 
         self.stdout.write("\n📊 Video Processing Statistics")
         self.stdout.write("=" * 35)
-        self.stdout.write("Total Jobs: {total_jobs}")
-        self.stdout.write("  ✅ Completed: {completed_jobs}")
-        self.stdout.write("  ⏳ Pending: {pending_jobs}")
-        self.stdout.write("  ❌ Failed: {failed_jobs}")
+        self.stdout.write(f"Total Jobs: {total_jobs}")
+        self.stdout.write(f"  ✅ Completed: {completed_jobs}")
+        self.stdout.write(f"  ⏳ Pending: {pending_jobs}")
+        self.stdout.write(f"  ❌ Failed: {failed_jobs}")
         self.stdout.write("\nProcessing Stats:")
-        self.stdout.write("  📝 Total Words: {total_words:,}")
-        self.stdout.write("  ⏱️ Total Processing Time: {total_processing_time:.1f}s")
+        self.stdout.write(f"  📝 Total Words: {total_words:,}")
+        self.stdout.write(f"  ⏱️ Total Processing Time: {total_processing_time:.1f}s")
 
         if completed_jobs > 0:
             avg_processing_time = total_processing_time / completed_jobs
             avg_words_per_video = total_words / completed_jobs
-            self.stdout.write("  📈 Avg Processing Time: {avg_processing_time:.2f}s")
-            self.stdout.write("  📈 Avg Words per Video: {avg_words_per_video:.0f}")
+            self.stdout.write(f"  📈 Avg Processing Time: {avg_processing_time:.2f}s")
+            self.stdout.write(f"  📈 Avg Words per Video: {avg_words_per_video:.0f}")
 
     def handle_rebuild_index(self, options):
         """Rebuild the semantic search index."""
@@ -366,8 +364,8 @@ class Command(BaseCommand):
             stats = search_engine.get_stats()
             if stats["is_initialized"]:
                 self.stdout.write("✅ Search index rebuilt successfully")
-                self.stdout.write("   📊 Indexed {stats['total_segments']} segments")
-                self.stdout.write("   🧠 Model: {stats['model_name']}")
+                self.stdout.write(f"   📊 Indexed {stats['total_segments']} segments")
+                self.stdout.write(f"   🧠 Model: {stats['model_name']}")
             else:
                 self.stdout.write("❌ Failed to rebuild search index")
 
@@ -380,13 +378,13 @@ class Command(BaseCommand):
 
         self.stdout.write("\n🧠 Semantic Search Engine Status")
         self.stdout.write("=" * 40)
-        self.stdout.write("Available: {'✅' if stats['is_available'] else '❌'}")
-        self.stdout.write("Initialized: {'✅' if stats['is_initialized'] else '❌'}")
+        self.stdout.write(f"Available: {'✅' if stats['is_available'] else '❌'}")
+        self.stdout.write(f"Initialized: {'✅' if stats['is_initialized'] else '❌'}")
 
         if stats["is_available"]:
-            self.stdout.write("Model: {stats['model_name']}")
-            self.stdout.write("Total Segments: {stats['total_segments']:,}")
-            self.stdout.write("Index Size: {stats['index_size']:,}")
+            self.stdout.write(f"Model: {stats['model_name']}")
+            self.stdout.write(f"Total Segments: {stats['total_segments']:,}")
+            self.stdout.write(f"Index Size: {stats['index_size']:,}")
 
             if not stats["is_initialized"]:
                 self.stdout.write("\n💡 Run 'rebuild-index' to enable semantic search")
