@@ -507,8 +507,8 @@ class Command(BaseCommand):
         if cleaned_count > 0:
             action = "Would free" if dry_run else "Freed"
             self.stdout.write("\n📊 Summary:")
-            self.stdout.write("   Videos processed: {cleaned_count}")
-            self.stdout.write("   Storage {action.lower()}: {total_size_mb:.1f}MB")
+            self.stdout.write(f"   Videos processed: {cleaned_count}")
+            self.stdout.write(f"   Storage {action.lower()}: {total_size_mb:.1f}MB")
 
             if dry_run:
                 self.stdout.write(
@@ -563,7 +563,8 @@ class Command(BaseCommand):
                 job.error_message = str(e)
                 job.completed_at = timezone.now()
                 job.save()
-            except:
+            except Exception:
+                # Ignore any errors when trying to update job status
                 pass
 
     def confirm(self, question):
@@ -674,7 +675,6 @@ class Command(BaseCommand):
             # Get regular search results first
             from video_processor.views import (
                 convert_semantic_results_to_display_format,
-                get_video_segments_for_search,
                 perform_keyword_search,
             )
 
@@ -721,7 +721,7 @@ class Command(BaseCommand):
                     self.stdout.write(f"   📋 Summary: {result.summary}")
 
                 if result.generated_questions:
-                    self.stdout.write(f"   ❓ Generated Questions:")
+                    self.stdout.write("   ❓ Generated Questions:")
                     for q in result.generated_questions[:2]:
                         self.stdout.write(f"      • {q}")
 
@@ -759,8 +759,6 @@ class Command(BaseCommand):
 
             # Search for relevant context
             self.stdout.write("🔍 Searching for relevant context...")
-
-            from video_processor.views import perform_keyword_search
 
             # Use keyword search to find relevant content
             context_data = []
