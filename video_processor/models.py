@@ -1,8 +1,7 @@
-import json
-import re
 import uuid
 from datetime import datetime
 from pathlib import Path
+import re
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -144,8 +143,6 @@ class VideoJob(models.Model):
                 return True
 
         # Check for YouTube video ID pattern in filename
-        import re
-
         # YouTube video IDs are 11 characters of letters, numbers, hyphens, underscores
         filename = Path(self.video_path).name
         youtube_id_pattern = r"[a-zA-Z0-9_-]{11}"
@@ -160,8 +157,6 @@ class VideoJob(models.Model):
 
     def get_youtube_video_id(self):
         """Extract YouTube video ID from the stored URL or filename."""
-        import re
-
         # First try to extract from stored YouTube URL
         if self.youtube_url:
             patterns = [

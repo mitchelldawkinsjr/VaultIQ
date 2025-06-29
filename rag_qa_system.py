@@ -1,9 +1,8 @@
 """
-RAG Q&A System for VaultIQ Phase 2
-Retrieval-Augmented Generation for intelligent question answering
+RAG (Retrieval-Augmented Generation) Question Answering System
+Advanced Q&A system with context retrieval and answer generation
 """
 
-import json
 import logging
 import time
 from dataclasses import dataclass

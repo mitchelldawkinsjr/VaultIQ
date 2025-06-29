@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Test script for CoreVideoProcessor
-
-This script tests the core video processing functionality without
-relying on complex infrastructure or external services.
+Comprehensive Test Suite for CoreVideoProcessor
+Tests all components of the video processing pipeline
 """
 
-import json
+import logging
 import os
 import sys
 import tempfile
+import time
+import unittest
 from pathlib import Path
 
 # Add the current directory to path so we can import our processor

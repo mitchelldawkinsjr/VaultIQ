@@ -12,7 +12,7 @@ import os
 import subprocess
 import sys
 import tempfile
-from abc import ABC, abstractmethod
+
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
@@ -709,7 +709,7 @@ class CoreVideoProcessor:
     def _log_initialization_status(self):
         """Log the initialization status of all components."""
         logger.info("CoreVideoProcessor initialized with components:")
-        logger.info(f"  - Video validation: Ready")
+        logger.info("  - Video validation: Ready")
         logger.info(
             f"  - Metadata extraction: {'OpenCV' if OPENCV_AVAILABLE else 'FFmpeg/Basic'}"
         )
@@ -902,8 +902,10 @@ class CoreVideoProcessor:
                         "word_count": transcription_result.word_count,
                         "processing_duration_seconds": transcription_result.processing_duration_seconds,
                     }
+                    word_count = transcription_result.word_count
+                    language = transcription_result.detected_language
                     logger.info(
-                        f"Transcription completed: {transcription_result.word_count} words in {transcription_result.detected_language}"
+                        f"Transcription completed: {word_count} words in {language}"
                     )
                 else:
                     analysis_summary["processing_errors"].append(

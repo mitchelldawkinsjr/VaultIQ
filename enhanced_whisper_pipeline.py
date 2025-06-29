@@ -1,14 +1,13 @@
 """
 Enhanced Whisper Pipeline for VaultIQ Phase 2
-Improved transcription accuracy, language detection, and advanced features
+Improved transcription with better accuracy and error handling
 """
 
-import json
 import logging
+import os
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np

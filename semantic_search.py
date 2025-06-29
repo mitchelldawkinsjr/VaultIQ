@@ -1,21 +1,20 @@
 """
 Semantic Search Engine for Video Content
-Uses sentence transformers for embedding generation and FAISS for efficient similarity search.
+High-performance semantic search using FAISS and sentence transformers
 """
 
-import json
 import logging
 import pickle
+import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List
 
 import numpy as np
 
 try:
     import faiss
     from sentence_transformers import SentenceTransformer
-
     SEMANTIC_SEARCH_AVAILABLE = True
 except ImportError:
     SEMANTIC_SEARCH_AVAILABLE = False

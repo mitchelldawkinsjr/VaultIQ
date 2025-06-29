@@ -5,14 +5,11 @@ Falls back to regular search when AI tokens are not available
 """
 
 import asyncio
-import json
 import logging
 import os
-import re
 import time
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import aiohttp
 
@@ -200,14 +197,14 @@ class AIEnhancedSearchEngine:
             logger.error(f"Hugging Face API call failed: {e}")
             return None
 
-    async def generate_qa_pairs_openai(self, content: str) -> List[str]:
-        """Generate Q/A pairs using OpenAI"""
+    async def generate_questions(self, content: str) -> List[str]:
+        """Generate natural questions based on content."""
         prompt = f"""
-        Based on this video transcript content, generate 3-5 natural questions that viewers might ask about this content. 
+        Based on this video transcript content, generate 3-5 natural questions that viewers might ask about this content.
         Focus on the main topics, insights, and practical advice mentioned.
-        
+
         Content: {content[:1000]}...
-        
+
         Format as a simple list of questions, one per line:
         """
 
@@ -219,43 +216,14 @@ class AIEnhancedSearchEngine:
             return questions[:5]
         return []
 
-    async def generate_qa_pairs_huggingface(self, content: str) -> List[str]:
-        """Generate questions using Hugging Face question generation"""
-        # For now, we'll use a simple approach with the QA model
-        # to generate likely questions based on content
-
-        # Extract key sentences for question generation
-        sentences = content.split(".")[:5]  # First 5 sentences
-        questions = []
-
-        for sentence in sentences:
-            if len(sentence.strip()) > 20:
-                # Use the QA model to generate questions
-                inputs = {
-                    "inputs": {
-                        "question": "What is this about?",
-                        "context": sentence.strip(),
-                    }
-                }
-
-                result = await self._call_huggingface_api(
-                    self.config.hf_qa_model, inputs
-                )
-                if result and "answer" in result:
-                    # Generate a question based on the answer
-                    question = f"What does this say about {result['answer'][:50]}?"
-                    questions.append(question)
-
-        return questions[:3]
-
-    async def classify_topic_openai(self, content: str) -> str:
-        """Classify content topic using OpenAI"""
+    async def classify_topic(self, content: str) -> str:
+        """Classify content into topics."""
         prompt = f"""
         Classify this video content into one of these categories:
         {', '.join(self.topic_labels)}
-        
+
         Content: {content[:800]}...
-        
+
         Respond with just the category name that best fits:
         """
 
@@ -267,19 +235,34 @@ class AIEnhancedSearchEngine:
                     return label
         return "general content"
 
-    async def classify_topic_huggingface(self, content: str) -> str:
-        """Classify content topic using Hugging Face"""
-        inputs = {
-            "inputs": content[:512],
-            "parameters": {"candidate_labels": self.topic_labels},
-        }
+    async def generate_summary(self, content: str) -> str:
+        """Generate a summary of the content."""
+        prompt = f"""
+        Provide a concise 2-3 sentence summary of the key points from this video content:
 
-        result = await self._call_huggingface_api(
-            self.config.hf_classification_model, inputs
-        )
-        if result and "labels" in result and result["labels"]:
-            return result["labels"][0]
-        return "general content"
+        {content[:1200]}...
+
+        Summary:
+        """
+
+        return await self._call_openai_api(prompt, max_tokens=100)
+
+    async def extract_key_concepts(self, content: str) -> List[str]:
+        """Extract key concepts from content."""
+        prompt = f"""
+        Extract 3-5 key concepts, topics, or themes from this content.
+        Return as a simple comma-separated list.
+
+        Content: {content[:1000]}...
+
+        Key concepts:
+        """
+
+        response = await self._call_openai_api(prompt, max_tokens=80)
+        if response:
+            concepts = [c.strip() for c in response.split(",") if c.strip()]
+            return concepts[:5]
+        return []
 
     async def analyze_sentiment_huggingface(self, content: str) -> float:
         """Analyze sentiment using Hugging Face"""
@@ -298,49 +281,6 @@ class AIEnhancedSearchEngine:
             else:  # Neutral
                 return 0.0
         return 0.0
-
-    async def summarize_content_openai(self, content: str) -> str:
-        """Summarize content using OpenAI"""
-        prompt = f"""
-        Provide a concise 2-3 sentence summary of the key points from this video content:
-        
-        {content[:1200]}...
-        
-        Summary:
-        """
-
-        return await self._call_openai_api(prompt, max_tokens=100)
-
-    async def summarize_content_huggingface(self, content: str) -> str:
-        """Summarize content using Hugging Face"""
-        inputs = {
-            "inputs": content[:1024],
-            "parameters": {"max_length": 100, "min_length": 30, "do_sample": False},
-        }
-
-        result = await self._call_huggingface_api(
-            self.config.hf_summarization_model, inputs
-        )
-        if result and isinstance(result, list) and result:
-            return result[0].get("summary_text", "")
-        return ""
-
-    async def extract_key_concepts_openai(self, content: str) -> List[str]:
-        """Extract key concepts using OpenAI"""
-        prompt = f"""
-        Extract 3-5 key concepts, topics, or themes from this content.
-        Return as a simple comma-separated list.
-        
-        Content: {content[:1000]}...
-        
-        Key concepts:
-        """
-
-        response = await self._call_openai_api(prompt, max_tokens=80)
-        if response:
-            concepts = [c.strip() for c in response.split(",") if c.strip()]
-            return concepts[:5]
-        return []
 
     async def enhance_search_results(
         self, search_results: List[Dict], use_openai: bool = True
@@ -391,10 +331,10 @@ class AIEnhancedSearchEngine:
                 if use_openai and self.config.has_openai_token:
                     # Use OpenAI for enhancements
                     tasks = [
-                        self.generate_qa_pairs_openai(content),
-                        self.classify_topic_openai(content),
-                        self.summarize_content_openai(content),
-                        self.extract_key_concepts_openai(content),
+                        self.generate_questions(content),
+                        self.classify_topic(content),
+                        self.generate_summary(content),
+                        self.extract_key_concepts(content),
                     ]
 
                     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -417,10 +357,10 @@ class AIEnhancedSearchEngine:
                 elif self.config.has_huggingface_token:
                     # Use Hugging Face for enhancements
                     tasks = [
-                        self.generate_qa_pairs_huggingface(content),
-                        self.classify_topic_huggingface(content),
+                        self.generate_questions(content),
+                        self.classify_topic(content),
                         self.analyze_sentiment_huggingface(content),
-                        self.summarize_content_huggingface(content),
+                        self.generate_summary(content),
                     ]
 
                     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -493,12 +433,12 @@ class AIEnhancedSearchEngine:
         if self.config.has_openai_token:
             prompt = f"""
             Based on the following video transcript content, answer this question concisely:
-            
+
             Question: {question}
-            
+
             Context:
             {context}
-            
+
             Answer:
             """
 

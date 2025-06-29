@@ -3,17 +3,15 @@ Enhanced Semantic Search Engine for VaultIQ Phase 2
 Improved embedding models, better chunking, and advanced search capabilities
 """
 
-import json
 import logging
 import pickle
 import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import faiss
-import numpy as np
 import torch
 
 # AI/ML imports
@@ -127,7 +125,7 @@ class EnhancedSemanticSearchEngine:
 
         except Exception as e:
             logger.warning(
-                f"Failed to load enhanced model {self.model_name}, falling back to base model"
+                f"Failed to load enhanced model {self.model_name}: {e}. Falling back to base model"
             )
             try:
                 self.model = SentenceTransformer("all-MiniLM-L6-v2", device=device)
@@ -154,8 +152,8 @@ class EnhancedSemanticSearchEngine:
         words = text.split()
         chunks = []
 
-        for i in range(0, len(words), self.max_chunk_length - self.chunk_overlap):
-            chunk_words = words[i : i + self.max_chunk_length]
+        for i in range(0, len(words), self.chunk_overlap):
+            chunk_words = words[i:i + self.max_chunk_length]
             chunk_text = " ".join(chunk_words)
 
             # Calculate approximate timing based on average speaking rate

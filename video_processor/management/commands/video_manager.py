@@ -166,7 +166,7 @@ class Command(BaseCommand):
             self.stdout.write("No video jobs found.")
             return
 
-        self.stdout.write(f"\n📚 Video Library ({len(jobs)} jobs)")
+        self.stdout.write("\n📚 Video Library ({len(jobs)} jobs)")
         self.stdout.write("=" * 50)
 
         for job in jobs:
@@ -177,22 +177,22 @@ class Command(BaseCommand):
                 "failed": "❌",
             }.get(job.status, "❓")
 
-            self.stdout.write(f"\n{status_emoji} {job.video_name}")
-            self.stdout.write(f"   ID: {job.job_id}")
-            self.stdout.write(f"   Status: {job.status}")
+            self.stdout.write("\n{status_emoji} {job.video_name}")
+            self.stdout.write("   ID: {job.job_id}")
+            self.stdout.write("   Status: {job.status}")
             self.stdout.write(
-                f"   Created: {job.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+                "   Created: {job.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
             )
 
             if job.status == JobStatus.COMPLETED:
-                self.stdout.write(f"   Duration: {job.duration_seconds:.1f}s")
-                self.stdout.write(f"   Words: {job.word_count}")
-                self.stdout.write(f"   Language: {job.language}")
+                self.stdout.write("   Duration: {job.duration_seconds:.1f}s")
+                self.stdout.write("   Words: {job.word_count}")
+                self.stdout.write("   Language: {job.language}")
                 if job.processing_time:
-                    self.stdout.write(f"   Processing Time: {job.processing_time:.2f}s")
+                    self.stdout.write("   Processing Time: {job.processing_time:.2f}s")
 
             if job.error_message:
-                self.stdout.write(f"   Error: {job.error_message}")
+                self.stdout.write("   Error: {job.error_message}")
 
     def handle_submit(self, options):
         """Submit a video for processing."""
@@ -209,10 +209,10 @@ class Command(BaseCommand):
             status=JobStatus.PENDING,
         )
 
-        self.stdout.write(f"✅ Video submitted for processing")
-        self.stdout.write(f"   Job ID: {job.job_id}")
-        self.stdout.write(f"   Video: {job.video_name}")
-        self.stdout.write(f"   Status: {job.status}")
+        self.stdout.write("✅ Video submitted for processing")
+        self.stdout.write("   Job ID: {job.job_id}")
+        self.stdout.write("   Video: {job.video_name}")
+        self.stdout.write("   Status: {job.status}")
 
         # Ask if user wants to process immediately
         if self.confirm("Process video now?"):
@@ -339,21 +339,21 @@ class Command(BaseCommand):
             for job in VideoJob.objects.filter(status=JobStatus.COMPLETED)
         )
 
-        self.stdout.write(f"\n📊 Video Processing Statistics")
+        self.stdout.write("\n📊 Video Processing Statistics")
         self.stdout.write("=" * 35)
-        self.stdout.write(f"Total Jobs: {total_jobs}")
-        self.stdout.write(f"  ✅ Completed: {completed_jobs}")
-        self.stdout.write(f"  ⏳ Pending: {pending_jobs}")
-        self.stdout.write(f"  ❌ Failed: {failed_jobs}")
-        self.stdout.write(f"\nProcessing Stats:")
-        self.stdout.write(f"  📝 Total Words: {total_words:,}")
-        self.stdout.write(f"  ⏱️ Total Processing Time: {total_processing_time:.1f}s")
+        self.stdout.write("Total Jobs: {total_jobs}")
+        self.stdout.write("  ✅ Completed: {completed_jobs}")
+        self.stdout.write("  ⏳ Pending: {pending_jobs}")
+        self.stdout.write("  ❌ Failed: {failed_jobs}")
+        self.stdout.write("\nProcessing Stats:")
+        self.stdout.write("  📝 Total Words: {total_words:,}")
+        self.stdout.write("  ⏱️ Total Processing Time: {total_processing_time:.1f}s")
 
         if completed_jobs > 0:
             avg_processing_time = total_processing_time / completed_jobs
             avg_words_per_video = total_words / completed_jobs
-            self.stdout.write(f"  📈 Avg Processing Time: {avg_processing_time:.2f}s")
-            self.stdout.write(f"  📈 Avg Words per Video: {avg_words_per_video:.0f}")
+            self.stdout.write("  📈 Avg Processing Time: {avg_processing_time:.2f}s")
+            self.stdout.write("  📈 Avg Words per Video: {avg_words_per_video:.0f}")
 
     def handle_rebuild_index(self, options):
         """Rebuild the semantic search index."""
@@ -365,9 +365,9 @@ class Command(BaseCommand):
 
             stats = search_engine.get_stats()
             if stats["is_initialized"]:
-                self.stdout.write(f"✅ Search index rebuilt successfully")
-                self.stdout.write(f"   📊 Indexed {stats['total_segments']} segments")
-                self.stdout.write(f"   🧠 Model: {stats['model_name']}")
+                self.stdout.write("✅ Search index rebuilt successfully")
+                self.stdout.write("   📊 Indexed {stats['total_segments']} segments")
+                self.stdout.write("   🧠 Model: {stats['model_name']}")
             else:
                 self.stdout.write("❌ Failed to rebuild search index")
 
@@ -378,15 +378,15 @@ class Command(BaseCommand):
         """Show search engine statistics."""
         stats = search_engine.get_stats()
 
-        self.stdout.write(f"\n🧠 Semantic Search Engine Status")
+        self.stdout.write("\n🧠 Semantic Search Engine Status")
         self.stdout.write("=" * 40)
-        self.stdout.write(f"Available: {'✅' if stats['is_available'] else '❌'}")
-        self.stdout.write(f"Initialized: {'✅' if stats['is_initialized'] else '❌'}")
+        self.stdout.write("Available: {'✅' if stats['is_available'] else '❌'}")
+        self.stdout.write("Initialized: {'✅' if stats['is_initialized'] else '❌'}")
 
         if stats["is_available"]:
-            self.stdout.write(f"Model: {stats['model_name']}")
-            self.stdout.write(f"Total Segments: {stats['total_segments']:,}")
-            self.stdout.write(f"Index Size: {stats['index_size']:,}")
+            self.stdout.write("Model: {stats['model_name']}")
+            self.stdout.write("Total Segments: {stats['total_segments']:,}")
+            self.stdout.write("Index Size: {stats['index_size']:,}")
 
             if not stats["is_initialized"]:
                 self.stdout.write("\n💡 Run 'rebuild-index' to enable semantic search")
@@ -495,9 +495,9 @@ class Command(BaseCommand):
                             video_path.unlink()
                             job.video_path = f"[CLEANED_UP] {job.video_path}"
                             job.save()
-                            self.stdout.write(f"   ✅ Deleted")
+                            self.stdout.write("   ✅ Deleted")
                         else:
-                            self.stdout.write(f"   🔍 Would delete")
+                            self.stdout.write("   🔍 Would delete")
 
                         cleaned_count += 1
 
@@ -508,16 +508,16 @@ class Command(BaseCommand):
 
         if cleaned_count > 0:
             action = "Would free" if dry_run else "Freed"
-            self.stdout.write(f"\n📊 Summary:")
-            self.stdout.write(f"   Videos processed: {cleaned_count}")
-            self.stdout.write(f"   Storage {action.lower()}: {total_size_mb:.1f}MB")
+            self.stdout.write("\n📊 Summary:")
+            self.stdout.write("   Videos processed: {cleaned_count}")
+            self.stdout.write("   Storage {action.lower()}: {total_size_mb:.1f}MB")
 
             if dry_run:
                 self.stdout.write(
-                    f"\n💡 Run without --dry-run to actually delete the files"
+                    "\n💡 Run without --dry-run to actually delete the files"
                 )
         else:
-            self.stdout.write(f"\n✅ No YouTube videos found to clean up")
+            self.stdout.write("\n✅ No YouTube videos found to clean up")
 
     def process_video_job(self, job_id):
         """Process a video job."""
