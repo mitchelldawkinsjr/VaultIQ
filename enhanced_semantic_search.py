@@ -85,11 +85,9 @@ class EnhancedSemanticSearchEngine:
     def is_available(self) -> bool:
         """Check if search engine dependencies are available."""
         try:
-            import faiss
-            import sentence_transformers
-
-            return True
-        except ImportError:
+            # Check if required modules are available
+            return faiss is not None and SentenceTransformer is not None
+        except (NameError, ImportError):
             return False
 
     @property
@@ -153,7 +151,7 @@ class EnhancedSemanticSearchEngine:
         chunks = []
 
         for i in range(0, len(words), self.chunk_overlap):
-            chunk_words = words[i:i + self.max_chunk_length]
+            chunk_words = words[i : i + self.max_chunk_length]
             chunk_text = " ".join(chunk_words)
 
             # Calculate approximate timing based on average speaking rate

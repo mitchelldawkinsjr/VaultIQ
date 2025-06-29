@@ -5,7 +5,6 @@ High-performance semantic search using FAISS and sentence transformers
 
 import logging
 import pickle
-import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
@@ -15,6 +14,7 @@ import numpy as np
 try:
     import faiss
     from sentence_transformers import SentenceTransformer
+
     SEMANTIC_SEARCH_AVAILABLE = True
 except ImportError:
     SEMANTIC_SEARCH_AVAILABLE = False

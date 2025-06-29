@@ -4,7 +4,6 @@ Improved transcription with better accuracy and error handling
 """
 
 import logging
-import os
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta

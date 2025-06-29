@@ -4,12 +4,9 @@ Comprehensive Test Suite for CoreVideoProcessor
 Tests all components of the video processing pipeline
 """
 
-import logging
 import os
 import sys
 import tempfile
-import time
-import unittest
 from pathlib import Path
 
 # Add the current directory to path so we can import our processor

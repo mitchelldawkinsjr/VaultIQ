@@ -6,28 +6,21 @@ import os
 import re
 import threading
 import time
-from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
 
 import yt_dlp
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
-from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
 from django.views.generic import ListView
 
 from core_video_processor import CoreVideoProcessor
@@ -128,23 +121,7 @@ def search_interface_view(request):
     return render(request, "video_processor/search_interface.html")
 
 
-@login_required
-@csrf_exempt
-def upload_video(request):
-    if request.method == "POST":
-        # Handle file upload with user ownership
-        if "video_file" in request.FILES:
-            video_file = request.FILES["video_file"]
-            # Save with user association
-            job = VideoJob.objects.create(
-                user=request.user,
-                video_path=video_file.name,
-                title=video_file.name,
-                status="pending",
-            )
-            return JsonResponse({"status": "success", "job_id": job.id})
-
-    return JsonResponse({"status": "error", "message": "Invalid request"})
+# Function removed - using the more comprehensive upload_video function below
 
 
 def search_videos(request):
@@ -838,9 +815,8 @@ def api_video_details(request, job_id):
 
 def video_player_page(request, job_id):
     """Direct link to video player page with optional timestamp."""
-    timestamp = request.GET.get("t", 0)
-
-    job = get_object_or_404(VideoJob, job_id=job_id)
+    # timestamp = request.GET.get("t", 0)  # Future use
+    # job = get_object_or_404(VideoJob, job_id=job_id)  # Future use
 
     # For now, redirect to main page
     # In a full implementation, this would show a dedicated video player
