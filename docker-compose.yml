@@ -1,3 +1,7 @@
+# AskMyVideo Web Application
+# Full-stack video processing and AI search platform
+version: '3.8'
+
 services:
   # VaultIQ Web Application
   web:

@@ -8,8 +8,8 @@ from django.urls import reverse
 from .models import VideoJob
 
 
-class VaultIQPhase1Tests(TestCase):
-    """Test suite for VaultIQ Phase 1: Foundation features."""
+class AskMyVideoPhase1Tests(TestCase):
+    """Test suite for AskMyVideo Phase 1: Foundation features."""
 
     def setUp(self):
         """Set up test data for each test."""

@@ -1,5 +1,5 @@
 """
-Enhanced Whisper Pipeline for VaultIQ Phase 2
+Enhanced Whisper Pipeline for AskMyVideo Phase 2
 Improved transcription with better accuracy and error handling
 """
 
@@ -496,3 +496,4 @@ enhanced_whisper = EnhancedWhisperPipeline()
 def get_enhanced_whisper():
     """Get the global enhanced Whisper pipeline instance."""
     return enhanced_whisper
+ 

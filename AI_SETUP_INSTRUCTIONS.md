@@ -1,4 +1,4 @@
-# VaultIQ AI Enhancement Setup 🧠🚀
+# AskMyVideo AI Enhancement Setup 🧠🚀
 
 **Advanced AI Integration Guide** - Configure OpenAI and Hugging Face APIs for enhanced intelligent search capabilities.
 

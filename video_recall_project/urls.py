@@ -1,7 +1,7 @@
 """
-URL configuration for VaultIQ project.
+URL configuration for AskMyVideo project.
 
-VaultIQ - Intelligent Video Search & Recall System
+AskMyVideo - Intelligent Video Search & Recall System
 Upload videos, search content with AI, and jump to exact moments.
 
 The `urlpatterns` list routes URLs to views. For more information please see:

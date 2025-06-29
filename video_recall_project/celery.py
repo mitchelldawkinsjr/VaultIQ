@@ -1,5 +1,5 @@
 """
-Celery configuration for VaultIQ Django project
+Celery configuration for AskMyVideo Django project
 """
 
 import os

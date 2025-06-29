@@ -14,7 +14,7 @@ ffmpeg-python>=0.2.0
 # Optional but recommended
 numpy>=1.24.0
 
-# Core VaultIQ Dependencies
+# Core AskMyVideo Dependencies
 Django==4.2.23
 Pillow==10.0.0
 

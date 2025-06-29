@@ -1,8 +1,8 @@
-# VaultIQ 🧠🎥
+# AskMyVideo 🧠🎥
 
 **Intelligent Video Search & Recall System** - Upload videos, search content with AI, and jump to exact moments.
 
-## ✨ What VaultIQ Does
+## ✨ What AskMyVideo Does
 
 - 🎥 **Smart Video Processing** - Automatic transcription with OpenAI Whisper
 - 🔍 **AI-Powered Search** - Find content using natural language queries
@@ -17,7 +17,7 @@
 # Install dependencies
 pip install -r core_requirements.txt
 
-# Start VaultIQ
+# Start AskMyVideo
 python3 manage.py runserver
 
 # Visit: http://localhost:8000
@@ -81,9 +81,9 @@ Try searching for:
 - "Dealing with anxiety"
 - "Building confidence"
 
-VaultIQ understands context and meaning, not just exact word matches!
+AskMyVideo understands context and meaning, not just exact word matches!
 
-## 🎉 Why VaultIQ?
+## 🎉 Why AskMyVideo?
 
 - ✅ **Actually Intelligent** - Real AI understanding, not just keyword matching
 - ✅ **Instant Results** - Jump to exact video moments in seconds
@@ -92,4 +92,4 @@ VaultIQ understands context and meaning, not just exact word matches!
 - ✅ **Cost Effective** - Free tier AI with smart fallbacks
 - ✅ **Privacy Focused** - All processing can run locally
 
-Transform how you search and recall video content with **VaultIQ** - where intelligence meets simplicity. 🚀 
+Transform how you search and recall video content with **AskMyVideo** - where intelligence meets simplicity. 🚀 

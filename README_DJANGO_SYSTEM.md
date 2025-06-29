@@ -1,4 +1,4 @@
-# VaultIQ Django System Documentation 🧠🎥
+# AskMyVideo Django System Documentation 🧠🎥
 
 **Intelligent Video Search & Recall System** - Technical documentation for the Django backend implementation.
 

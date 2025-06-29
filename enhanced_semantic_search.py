@@ -1,5 +1,5 @@
 """
-Enhanced Semantic Search Engine for VaultIQ Phase 2
+Enhanced Semantic Search Engine for AskMyVideo Phase 2
 Improved embedding models, better chunking, and advanced search capabilities
 """
 
@@ -457,3 +457,4 @@ enhanced_search_engine = EnhancedSemanticSearchEngine()
 def get_enhanced_search_engine():
     """Get the global enhanced search engine instance."""
     return enhanced_search_engine
+ 

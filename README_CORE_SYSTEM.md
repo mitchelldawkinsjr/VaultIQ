@@ -1,4 +1,4 @@
-# VaultIQ Core Processing System 🧠⚙️
+# AskMyVideo Core Processing System 🧠⚙️
 
 **Intelligent Video Processing Engine** - Core components for video transcription and AI search capabilities.
 

@@ -452,3 +452,4 @@ rag_qa_system = RAGQuestionAnswering()
 def get_rag_qa_system():
     """Get the global RAG Q&A system instance."""
     return rag_qa_system
+ 
