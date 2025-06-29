@@ -24,7 +24,7 @@ FROM deps as app
 COPY . .
 
 # Create directories for media and cache
-RUN mkdir -p /app/media /app/uploads /app/search_cache /app/static
+RUN mkdir -p /app/media /app/uploads /app/search_cache /app/static /app/staticfiles
 
 # Collect static files
 RUN python manage.py collectstatic --noinput

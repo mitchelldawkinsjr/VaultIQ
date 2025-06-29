@@ -24,8 +24,9 @@ yt-dlp==2023.7.6
 
 # AI & Search - Phase 2 Enhanced
 torch==2.0.1
-transformers==4.33.2
-sentence-transformers==2.2.2
+transformers==4.44.0
+sentence-transformers==2.7.0
+huggingface-hub==0.24.0
 faiss-cpu==1.7.4
 numpy==1.24.3
 
